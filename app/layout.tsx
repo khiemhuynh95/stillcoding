@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: "StillCoding — Browse Challenges",
@@ -36,6 +37,7 @@ export default function RootLayout({
       </head>
       <body className="bg-background text-on-surface font-body-md">
         <QueryProvider>{children}</QueryProvider>
+        <Analytics />
       </body>
     </html>
   );
