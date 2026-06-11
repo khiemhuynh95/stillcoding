@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Material 3 color schemes as RGB channels (consumed by tailwind.config.ts).
+ * :root = light scheme. .dark overrides only the roles that change; the
+ * tone-stable *-fixed roles inherit from :root.
+ */
+:root {
+  color-scheme: light;
+  --primary: 0 91 191;
+  --primary-tint: 232 240 254;
+  --on-primary: 255 255 255;
+  --primary-container: 26 115 232;
+  --on-primary-container: 255 255 255;
+  --surface-tint: 0 91 192;
+  --inverse-primary: 173 199 255;
+  --secondary: 0 110 44;
+  --on-secondary: 255 255 255;
+  --secondary-container: 134 248 152;
+  --on-secondary-container: 0 114 47;
+  --tertiary: 121 89 0;
+  --on-tertiary: 255 255 255;
+  --tertiary-container: 152 112 0;
+  --on-tertiary-container: 255 255 255;
+  --error: 186 26 26;
+  --on-error: 255 255 255;
+  --error-container: 255 218 214;
+  --on-error-container: 147 0 10;
+  --background: 248 249 250;
+  --on-background: 25 28 29;
+  --surface: 248 249 250;
+  --on-surface: 25 28 29;
+  --on-surface-variant: 65 71 84;
+  --surface-variant: 225 227 228;
+  --surface-dim: 217 218 219;
+  --surface-bright: 248 249 250;
+  --surface-container-lowest: 255 255 255;
+  --surface-container-low: 243 244 245;
+  --surface-container: 237 238 239;
+  --surface-container-high: 231 232 233;
+  --surface-container-highest: 225 227 228;
+  --inverse-surface: 46 49 50;
+  --inverse-on-surface: 240 241 242;
+  --outline: 114 119 133;
+  --outline-variant: 193 198 214;
+  --primary-fixed: 216 226 255;
+  --primary-fixed-dim: 173 199 255;
+  --on-primary-fixed: 0 26 65;
+  --on-primary-fixed-variant: 0 68 147;
+  --secondary-fixed: 137 250 155;
+  --secondary-fixed-dim: 109 221 129;
+  --on-secondary-fixed: 0 33 8;
+  --on-secondary-fixed-variant: 0 83 32;
+  --tertiary-fixed: 255 223 160;
+  --tertiary-fixed-dim: 251 188 5;
+  --on-tertiary-fixed: 38 26 0;
+  --on-tertiary-fixed-variant: 92 67 0;
+}
+
+.dark {
+  color-scheme: dark;
+  --primary: 173 199 255;
+  --primary-tint: 26 43 71;
+  --on-primary: 0 47 101;
+  --primary-container: 0 68 147;
+  --on-primary-container: 216 226 255;
+  --surface-tint: 173 199 255;
+  --inverse-primary: 0 91 191;
+  --secondary: 109 221 129;
+  --on-secondary: 0 57 20;
+  --secondary-container: 0 83 32;
+  --on-secondary-container: 137 250 155;
+  --tertiary: 245 190 72;
+  --on-tertiary: 65 45 0;
+  --tertiary-container: 92 67 0;
+  --on-tertiary-container: 255 223 160;
+  --error: 255 180 171;
+  --on-error: 105 0 5;
+  --error-container: 147 0 10;
+  --on-error-container: 255 218 214;
+  --background: 17 20 24;
+  --on-background: 225 226 230;
+  --surface: 17 20 24;
+  --on-surface: 225 226 230;
+  --on-surface-variant: 196 198 207;
+  --surface-variant: 65 71 77;
+  --surface-dim: 17 20 24;
+  --surface-bright: 55 57 62;
+  --surface-container-lowest: 12 14 17;
+  --surface-container-low: 25 28 32;
+  --surface-container: 29 32 36;
+  --surface-container-high: 39 42 47;
+  --surface-container-highest: 50 53 58;
+  --inverse-surface: 225 226 230;
+  --inverse-on-surface: 46 49 50;
+  --outline: 139 145 158;
+  --outline-variant: 65 71 77;
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-on-surface;
+    font-family: "Inter", sans-serif;
+  }
+
+  /* Material Symbols defaults (icon font loaded in layout.tsx) */
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    vertical-align: middle;
+    user-select: none;
+  }
+  .material-symbols-outlined.fill {
+    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+  }
+
+  /* Render the API's problem HTML (dangerouslySetInnerHTML) readably. */
+  .problem-content p {
+    @apply text-body-md text-on-surface-variant leading-relaxed mb-4;
+  }
+  .problem-content code {
+    @apply bg-surface-container px-1 rounded font-code-md text-[13px];
+  }
+  .problem-content pre {
+    @apply bg-surface-container-low p-4 rounded-lg border border-outline-variant font-code-md text-code-md overflow-x-auto my-4 whitespace-pre-wrap;
+  }
+  .problem-content ul {
+    @apply list-disc ml-5 space-y-1 mb-4;
+  }
+  .problem-content ol {
+    @apply list-decimal ml-5 space-y-1 mb-4;
+  }
+  .problem-content strong {
+    @apply font-semibold text-on-surface;
+  }
+  .problem-content img {
+    @apply max-w-full my-4 rounded-lg;
+  }
+  .problem-content a {
+    @apply text-primary underline;
+  }
+}
+
+@layer components {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-surface-variant;
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-outline-variant;
+  }
+}

@@ -1,0 +1,759 @@
+<!-- Browse Problems -->
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>DevStudio Pro - Browse Challenges</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=JetBrains+Mono:wght@400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e1e3e4;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #c1c6d6;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#005320",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#005bc0",
+                        "secondary": "#006e2c",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#fbbc05",
+                        "on-secondary-fixed": "#002108",
+                        "on-primary-container": "#ffffff",
+                        "on-surface-variant": "#414754",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#ffffff",
+                        "tertiary": "#795900",
+                        "surface-dim": "#d9dadb",
+                        "tertiary-container": "#987000",
+                        "inverse-primary": "#adc7ff",
+                        "surface-variant": "#e1e3e4",
+                        "on-primary-fixed": "#001a41",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#86f898",
+                        "on-background": "#191c1d",
+                        "on-secondary-container": "#00722f",
+                        "surface-bright": "#f8f9fa",
+                        "tertiary-fixed": "#ffdfa0",
+                        "surface-container-highest": "#e1e3e4",
+                        "primary-container": "#1a73e8",
+                        "on-tertiary-fixed": "#261a00",
+                        "inverse-surface": "#2e3132",
+                        "primary": "#005bbf",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed-dim": "#6ddd81",
+                        "secondary-fixed": "#89fa9b",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "outline": "#727785",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#adc7ff",
+                        "on-primary-fixed-variant": "#004493",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container-low": "#f3f4f5",
+                        "on-error-container": "#93000a",
+                        "background": "#f8f9fa",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#edeeef",
+                        "surface": "#f8f9fa",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c1c6d6",
+                        "surface-container-high": "#e7e8e9",
+                        "on-surface": "#191c1d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-gap": "4px",
+                        "edge-margin": "8px",
+                        "sidebar-width": "260px",
+                        "panel-height": "200px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "code-md": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "code-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline flex justify-between items-center w-full px-edge-margin h-14 max-w-full fixed top-0 z-50">
+<div class="flex items-center gap-6">
+<span class="text-headline-sm font-headline-sm font-bold text-primary dark:text-primary-fixed">DevStudio Pro</span>
+<nav class="hidden md:flex gap-4 items-center h-14">
+<a class="font-body-md text-body-md text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed pb-1 h-full flex items-center mt-1" href="#">Browse</a>
+
+
+
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant focus-within:ring-2 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-on-surface-variant mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm font-body-sm w-48" placeholder="Search problems..." type="text">
+</div>
+<div class="flex items-center gap-2">
+
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container rounded-full transition-colors">settings</button>
+</div>
+<div class="h-8 w-px bg-outline-variant mx-1"></div>
+
+
+</div>
+</header>
+<div class="flex pt-14 h-screen">
+<!-- Sidebar Filters -->
+<aside class="w-sidebar-width bg-surface-container-low border-r border-outline-variant flex flex-col hidden lg:flex">
+<div class="p-6 flex flex-col gap-8 overflow-y-auto custom-scrollbar">
+<!-- Category Section -->
+<div>
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-4">Categories</h3>
+<div class="flex flex-col gap-1">
+<button class="flex items-center justify-between w-full p-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-variant">
+<span class="flex items-center gap-3">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                                All Problems
+                            </span>
+</button>
+<button class="flex items-center justify-between w-full p-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-variant">
+<span class="flex items-center gap-3">
+<span class="material-symbols-outlined">trending_up</span>
+                                Top 100 Liked
+                            </span>
+</button>
+
+</div>
+</div>
+<!-- Difficulty Filter -->
+<div>
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-4">Difficulty</h3>
+<div class="flex flex-col gap-2">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded-sm text-primary border-outline focus:ring-primary" type="checkbox">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary">Easy</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded-sm text-primary border-outline focus:ring-primary" type="checkbox">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary">Medium</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded-sm text-primary border-outline focus:ring-primary" type="checkbox">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary">Hard</span>
+</label>
+</div>
+</div>
+<!-- Topics Section -->
+<div>
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-4">Popular Topics</h3>
+<div class="flex flex-wrap gap-2">
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-label-md font-label-md text-on-surface cursor-pointer hover:bg-primary-container hover:text-on-primary-container transition-colors">Array</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-label-md font-label-md text-on-surface cursor-pointer hover:bg-primary-container hover:text-on-primary-container transition-colors">String</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-label-md font-label-md text-on-surface cursor-pointer hover:bg-primary-container hover:text-on-primary-container transition-colors">Hash Table</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-label-md font-label-md text-on-surface cursor-pointer hover:bg-primary-container hover:text-on-primary-container transition-colors">Dynamic Programming</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-label-md font-label-md text-on-surface cursor-pointer hover:bg-primary-container hover:text-on-primary-container transition-colors">Sorting</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-label-md font-label-md text-on-surface cursor-pointer hover:bg-primary-container hover:text-on-primary-container transition-colors">Greedy</span>
+</div>
+</div>
+<!-- Promo Card -->
+
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto custom-scrollbar p-gutter lg:p-8">
+<div class="max-w-6xl mx-auto">
+<!-- Hero/Bento Header -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+
+</section>
+<!-- Filters and Table Controls -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+<div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-lg text-on-surface hover:bg-surface-variant transition-colors border border-outline-variant">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+<span class="font-label-md text-label-md">Filters</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-1"></div>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-label-md font-label-md hover:border-primary transition-colors">Study Plan</button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-label-md font-label-md hover:border-primary transition-colors">Tags</button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-label-md font-label-md hover:border-primary transition-colors">Company</button>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-label-md text-on-surface-variant">Sort by:</span>
+<select class="bg-transparent border-none focus:ring-0 font-label-md text-label-md text-on-surface p-0 pr-6 cursor-pointer">
+<option>Newest</option>
+<option>Most Accepted</option>
+<option>Hardest</option>
+</select>
+</div>
+</div>
+<!-- Main Data Table -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl overflow-hidden shadow-sm">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50 border-b border-outline-variant">
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider w-16">Status</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Title</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider w-32">Difficulty</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider w-40">Acceptance Rate</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider w-24">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="group hover:bg-surface-container-low/30 transition-colors cursor-pointer">
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-on-surface group-hover:text-primary transition-colors">1. Two Sum</span>
+<span class="text-label-md text-on-surface-variant">Array, Hash Table</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="bg-secondary-container/30 text-on-secondary-container px-3 py-1 rounded-full text-label-md font-bold">Easy</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-2">
+<div class="w-16 bg-surface-variant h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full" style="width: 49.5%"></div>
+</div>
+<span class="text-label-md text-on-surface-variant">49.5%</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity" style="transform: translateX(0px);">code</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-surface-container-low/30 transition-colors cursor-pointer">
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-outline-variant">circle</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-on-surface group-hover:text-primary transition-colors">2. Add Two Numbers</span>
+<span class="text-label-md text-on-surface-variant">Linked List, Math</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant px-3 py-1 rounded-full text-label-md font-bold">Medium</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-2">
+<div class="w-16 bg-surface-variant h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full" style="width: 40.2%"></div>
+</div>
+<span class="text-label-md text-on-surface-variant">40.2%</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity" style="transform: translateX(0px);">code</span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-surface-container-low/30 transition-colors cursor-pointer">
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" style="font-variation-settings: 'FILL' 1;">history</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-on-surface group-hover:text-primary transition-colors">3. Longest Substring Without Repeating...</span>
+<span class="text-label-md text-on-surface-variant">String, Sliding Window</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant px-3 py-1 rounded-full text-label-md font-bold">Medium</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-2">
+<div class="w-16 bg-surface-variant h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full" style="width: 33.8%"></div>
+</div>
+<span class="text-label-md text-on-surface-variant">33.8%</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity" style="transform: translateX(0px);">code</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-surface-container-low/30 transition-colors cursor-pointer">
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-outline-variant">circle</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-on-surface group-hover:text-primary transition-colors">4. Median of Two Sorted Arrays</span>
+<span class="text-label-md text-on-surface-variant">Array, Binary Search</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="bg-error-container text-on-error-container px-3 py-1 rounded-full text-label-md font-bold">Hard</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-2">
+<div class="w-16 bg-surface-variant h-1.5 rounded-full overflow-hidden">
+<div class="bg-error h-full" style="width: 35.1%"></div>
+</div>
+<span class="text-label-md text-on-surface-variant">35.1%</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity" style="transform: translateX(0px);">code</span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="group hover:bg-surface-container-low/30 transition-colors cursor-pointer">
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-outline-variant">circle</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-on-surface group-hover:text-primary transition-colors">5. Longest Palindromic Substring</span>
+<span class="text-label-md text-on-surface-variant">String, DP</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant px-3 py-1 rounded-full text-label-md font-bold">Medium</span>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-2">
+<div class="w-16 bg-surface-variant h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full" style="width: 32.4%"></div>
+</div>
+<span class="text-label-md text-on-surface-variant">32.4%</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity" style="transform: translateX(0px);">code</span>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination -->
+<div class="bg-surface-container-low/30 border-t border-outline-variant px-6 py-4 flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">Showing 1-20 of 2,400 problems</span>
+<div class="flex items-center gap-1">
+<button class="p-2 rounded-lg hover:bg-surface-variant disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary text-body-sm font-bold">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant text-body-sm">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant text-body-sm">3</button>
+<span class="px-2">...</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant text-body-sm">120</button>
+<button class="p-2 rounded-lg hover:bg-surface-variant">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Success Stories / Stats Grid -->
+
+</div>
+<!-- Footer -->
+<footer class="mt-20 border-t border-outline-variant pt-8 pb-12 w-full">
+<div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex flex-col gap-2">
+<span class="font-label-md text-label-md text-primary font-bold">DevStudio Pro</span>
+<span class="text-body-sm text-on-surface-variant">© 2024 DevStudio Pro. All rights reserved.</span>
+</div>
+<div class="flex gap-8">
+<a class="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Support</a>
+<a class="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms</a>
+<a class="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">API</a>
+</div>
+</div>
+</footer>
+</main>
+</div>
+<!-- Mobile Navigation Bar -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-lowest border-t border-outline-variant px-4 py-2 flex justify-around items-center z-50">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="text-[10px] font-bold">Browse</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">task</span>
+<span class="text-[10px]">Challenges</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">forum</span>
+<span class="text-[10px]">Discuss</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[10px]">Profile</span>
+</button>
+</div>
+<!-- Floating Action Button (Only for relevant contexts) -->
+<button class="fixed bottom-20 right-8 md:bottom-8 md:right-8 bg-primary text-on-primary w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group z-40">
+<span class="material-symbols-outlined">shuffle</span>
+<span class="absolute right-full mr-4 bg-inverse-surface text-inverse-on-surface px-3 py-1 rounded-lg text-body-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Pick Random Problem</span>
+</button>
+<script>
+        // Micro-interaction: Active state for sidebar category buttons
+        const sidebarButtons = document.querySelectorAll('aside button');
+        sidebarButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                sidebarButtons.forEach(b => {
+                    b.classList.remove('bg-primary-container', 'text-on-primary-container');
+                    b.classList.add('text-on-surface-variant', 'hover:bg-surface-variant');
+                });
+                btn.classList.add('bg-primary-container', 'text-on-primary-container');
+                btn.classList.remove('text-on-surface-variant', 'hover:bg-surface-variant');
+            });
+        });
+
+        // Micro-interaction: Smooth row hover effect enhancement
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.querySelector('td:last-child span').style.transform = 'translateX(5px)';
+            });
+            row.addEventListener('mouseleave', () => {
+                row.querySelector('td:last-child span').style.transform = 'translateX(0)';
+            });
+        });
+    </script>
+
+
+</body></html>
+
+<!-- Code Workspace - Study Mode -->
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Two Sum | DevStudio Pro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#005320",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#005bc0",
+                        "secondary": "#006e2c",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#fbbc05",
+                        "on-secondary-fixed": "#002108",
+                        "on-primary-container": "#ffffff",
+                        "on-surface-variant": "#414754",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#ffffff",
+                        "tertiary": "#795900",
+                        "surface-dim": "#d9dadb",
+                        "tertiary-container": "#987000",
+                        "inverse-primary": "#adc7ff",
+                        "surface-variant": "#e1e3e4",
+                        "on-primary-fixed": "#001a41",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#86f898",
+                        "on-background": "#191c1d",
+                        "on-secondary-container": "#00722f",
+                        "surface-bright": "#f8f9fa",
+                        "tertiary-fixed": "#ffdfa0",
+                        "surface-container-highest": "#e1e3e4",
+                        "primary-container": "#1a73e8",
+                        "on-tertiary-fixed": "#261a00",
+                        "inverse-surface": "#2e3132",
+                        "primary": "#005bbf",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed-dim": "#6ddd81",
+                        "secondary-fixed": "#89fa9b",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "outline": "#727785",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#adc7ff",
+                        "on-primary-fixed-variant": "#004493",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container-low": "#f3f4f5",
+                        "on-error-container": "#93000a",
+                        "background": "#f8f9fa",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#edeeef",
+                        "surface": "#f8f9fa",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c1c6d6",
+                        "surface-container-high": "#e7e8e9",
+                        "on-surface": "#191c1d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-gap": "4px",
+                        "edge-margin": "8px",
+                        "sidebar-width": "260px",
+                        "panel-height": "200px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "code-md": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "code-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .code-line-number {
+            user-select: none;
+            min-width: 3rem;
+            text-align: right;
+            padding-right: 1rem;
+            color: #94a3b8;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e1e3e4;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #c1c6d6;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline flex justify-between items-center w-full px-edge-margin h-14 max-w-full z-50">
+<div class="flex items-center gap-6">
+<span class="text-headline-sm font-headline-sm font-bold text-primary dark:text-primary-fixed cursor-pointer">DevStudio Pro</span>
+<div class="hidden md:flex items-center gap-4">
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-outline-variant hover:bg-surface-container dark:hover:bg-surface-variant transition-colors px-3 py-1 rounded cursor-pointer">Browse</a>
+
+
+
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">notifications</button>
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">settings</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+<button class="px-4 py-1.5 rounded-full border border-outline text-primary font-label-md text-label-md hover:bg-surface-container transition-colors">Save Draft</button>
+<button class="px-4 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 active:opacity-80 transition-all">Mark as Read</button>
+</div>
+</nav>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar (Used for tabs logic on this page) -->
+
+<!-- Main Content Area -->
+<main class="flex flex-1 overflow-hidden">
+<!-- Left Pane: Problem Description -->
+<section class="flex-1 overflow-y-auto custom-scrollbar bg-surface-container-lowest p-gutter space-y-6">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-4">Description</h2>
+<p class="text-body-md font-body-md text-on-surface-variant leading-relaxed">
+                        Given an array of integers <code class="bg-surface-container px-1 rounded font-code-md">nums</code> and an integer <code class="bg-surface-container px-1 rounded font-code-md">target</code>, return <em>indices of the two numbers such that they add up to <code class="bg-surface-container px-1 rounded font-code-md">target</code></em>.
+                    </p>
+<p class="text-body-md font-body-md text-on-surface-variant mt-4 leading-relaxed">
+                        You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.
+                    </p>
+<p class="text-body-md font-body-md text-on-surface-variant mt-4 leading-relaxed">
+                        You can return the answer in any order.
+                    </p>
+</div>
+<!-- Example 1 -->
+<div class="space-y-3">
+<h3 class="font-label-md text-label-md uppercase tracking-wider text-outline">Example 1:</h3>
+<div class="bg-surface-container-low p-4 rounded-lg border border-outline-variant font-code-md text-code-md">
+<p class=""><span class="text-on-surface-variant">Input:</span> nums = [2,7,11,15], target = 9</p>
+<p class=""><span class="text-on-surface-variant">Output:</span> [0,1]</p>
+<p class="mt-2 text-on-surface-variant italic">Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].</p>
+</div>
+</div>
+<!-- Example 2 -->
+<div class="space-y-3">
+<h3 class="font-label-md text-label-md uppercase tracking-wider text-outline">Example 2:</h3>
+<div class="bg-surface-container-low p-4 rounded-lg border border-outline-variant font-code-md text-code-md">
+<p class=""><span class="text-on-surface-variant">Input:</span> nums = [3,2,4], target = 6</p>
+<p class=""><span class="text-on-surface-variant">Output:</span> [1,2]</p>
+</div>
+</div>
+<!-- Constraints -->
+<div class="space-y-3">
+<h3 class="font-label-md text-label-md uppercase tracking-wider text-outline">Constraints:</h3>
+<ul class="list-disc ml-5 space-y-1 font-code-md text-code-md text-on-surface-variant">
+<li class=""><code class="bg-surface-container px-1 rounded">2 &lt;= nums.length &lt;= 104</code></li>
+<li class=""><code class="bg-surface-container px-1 rounded">-109 &lt;= nums[i] &lt;= 109</code></li>
+<li class=""><code class="bg-surface-container px-1 rounded">-109 &lt;= target &lt;= 109</code></li>
+<li class=""><strong>Only one valid answer exists.</strong></li>
+</ul>
+</div>
+<!-- Follow up hint -->
+<div class="bg-secondary-container/20 p-4 rounded-lg border border-secondary-container/50">
+<p class="text-body-sm font-body-sm text-on-secondary-container italic">
+<strong>Follow-up:</strong> Can you come up with an algorithm that is less than O(n²) time complexity?
+                    </p>
+</div>
+</section>
+<!-- Vertical Divider -->
+<div class="w-1 bg-outline-variant/30 hover:bg-primary/50 transition-colors cursor-col-resize shrink-0"></div>
+<!-- Right Pane: Code Editor -->
+<section class="flex-1 flex flex-col bg-[#ffffff]">
+<!-- Editor Header -->
+<div class="h-10 flex items-center justify-between px-4 bg-surface-container-low border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container-highest rounded text-on-surface-variant font-label-md text-label-md cursor-pointer">
+<span class="material-symbols-outlined text-sm">code</span>
+<span class="">Python 3</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-outline hover:text-on-surface transition-colors" title="Settings">settings</button>
+<button class="material-symbols-outlined text-outline hover:text-on-surface transition-colors" title="Full Screen">fullscreen</button>
+</div>
+</div>
+<!-- Editor Surface -->
+<div class="flex-1 overflow-auto custom-scrollbar font-code-md text-code-md py-4">
+<div class="flex">
+<div class="flex flex-col code-line-number text-opacity-50">
+<span class="">1</span><span class="">2</span><span class="">3</span><span class="">4</span><span class="">5</span><span class="">6</span><span class="">7</span><span class="">8</span><span class="">9</span><span class="">10</span><span class="">11</span><span class="">12</span><span class="">13</span><span class="">14</span><span class="">15</span>
+</div>
+<div class="flex-1 whitespace-pre">
+<span class="text-[#005bbf]">class</span> <span class="text-[#795900]">Solution</span>:
+    <span class="text-[#005bbf]">def</span> <span class="text-[#795900]">twoSum</span>(<span class="text-[#005bbf]">self</span>, nums: <span class="text-[#006e2c]">List</span>[<span class="text-[#006e2c]">int</span>], target: <span class="text-[#006e2c]">int</span>) -&gt; <span class="text-[#006e2c]">List</span>[<span class="text-[#006e2c]">int</span>]:
+        <span class="text-outline-variant italic"># Your solution here</span>
+<span class="text-[#005bbf]">pass</span>
+</div>
+</div>
+<!-- Typing simulation cursor -->
+<div class="ml-16 mt-2 h-5 w-2 bg-primary/40 animate-pulse"></div>
+</div>
+<!-- Editor Footer / Status -->
+<div class="h-8 flex items-center px-4 bg-surface-container-low border-t border-outline-variant text-label-md font-label-md text-on-surface-variant">
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">info</span> Read-only Mode</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">history</span> Last edited 2m ago</span>
+</div>
+<div class="ml-auto flex items-center gap-3">
+<span class="">Ln 4, Col 9</span>
+<span class="">Spaces: 4</span>
+<span class="">UTF-8</span>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-dim dark:bg-inverse-surface border-t border-outline-variant dark:border-outline w-full py-2 px-edge-margin flex justify-between items-center z-50">
+<span class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant">© 2024 DevStudio Pro. All rights reserved.</span>
+<div class="flex items-center gap-4">
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors cursor-pointer">Support</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors cursor-pointer">Privacy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors cursor-pointer">Terms</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors cursor-pointer">API</a>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for the vertical divider
+        const divider = document.querySelector('.cursor-col-resize');
+        const leftPane = divider.previousElementSibling;
+        const rightPane = divider.nextElementSibling;
+
+        let isResizing = false;
+
+        divider.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerWidth = divider.parentElement.offsetWidth;
+            const percentage = (e.clientX - divider.parentElement.offsetLeft) / containerWidth * 100;
+            
+            if (percentage > 20 && percentage < 80) {
+                leftPane.style.flex = `0 0 ${percentage}%`;
+                rightPane.style.flex = `0 0 ${100 - percentage}%`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        });
+
+        // Tab switching logic (Visual only)
+        document.querySelectorAll('aside nav div').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('aside nav div').forEach(t => {
+                    t.classList.remove('bg-primary-container', 'text-on-primary-container');
+                    t.classList.add('text-on-surface-variant');
+                });
+                tab.classList.add('bg-primary-container', 'text-on-primary-container');
+                tab.classList.remove('text-on-surface-variant');
+            });
+        });
+    </script>
+
+
+</body></html>
