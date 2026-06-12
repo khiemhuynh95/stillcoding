@@ -71,12 +71,12 @@ for (const p of batch) {
     { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } },
   );
   const rows = await getRes.json();
-  const original = rows?.[0]?.content;
-  if (!original) {
-    console.error(`FAIL ${p.id}  could not read original content`);
+  if (!Array.isArray(rows) || rows.length === 0) {
+    console.error(`FAIL ${p.id}  row not found`);
     failed++;
     continue;
   }
+  const original = rows[0].content; // may be null for paid/locked problems
 
   const body = {
     display_title: p.title,
@@ -84,12 +84,22 @@ for (const p of batch) {
   };
   if (Array.isArray(p.tags)) body.topic_tags = p.tags;
 
-  const spliced = spliceIntro(original, p.intro);
-  if (spliced) {
-    body.display_content = spliced;
-  } else {
+  if (p.intro && original) {
+    const spliced = spliceIntro(original, p.intro);
+    if (spliced) {
+      body.display_content = spliced;
+    } else {
+      nobody++;
+      console.warn(`NOBODY ${p.id}  no Example block; title/tags only`);
+    }
+  } else if (p.intro && !original) {
+    // Paid/locked: no original body to splice onto. Rename/retag only.
     nobody++;
-    console.warn(`NOBODY ${p.id}  no Example block; title/tags only`);
+    console.warn(`PAID ${p.id}  null content; title/tags only`);
+  } else {
+    // Intentionally rename/retag only (e.g. SQL schema problems).
+    nobody++;
+    console.warn(`KEEPBODY ${p.id}  title/tags only (no intro provided)`);
   }
 
   const res = await fetch(
