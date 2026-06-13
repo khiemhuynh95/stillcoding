@@ -38,5 +38,8 @@ export const storageKeys = {
   lang: "lang",
   theme: "theme",
   lists: "lists",
+  noiseAutoPlay: "noiseAutoPlay",
+  noiseVolume: "noiseVolume",
+  noiseTone: "noiseTone",
   draft: (slug: string, lang: string) => `draft:${slug}:${lang}`,
 } as const;
