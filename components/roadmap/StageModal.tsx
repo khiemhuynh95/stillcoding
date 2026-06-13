@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import type { RoadmapNode } from "@/lib/roadmap";
+import { getPractice } from "@/lib/practice";
 import type { ProblemSummary } from "@/lib/types";
 import type { SolvedMap } from "@/hooks/useSolvedStatus";
 import { DifficultyBadge } from "@/components/browse/DifficultyBadge";
@@ -30,6 +31,7 @@ export function StageModal({
   const solvedCount = node.problems.filter(
     (s) => solvedMap[s] === "solved",
   ).length;
+  const hasPractice = getPractice(node.id) != null;
 
   return (
     <div
@@ -58,6 +60,22 @@ export function StageModal({
             close
           </button>
         </div>
+        {hasPractice && (
+          <Link
+            href={`/practice/${node.id}`}
+            className="flex items-center gap-2 mx-4 mt-3 px-3 py-2.5 rounded-lg bg-primary-tint border border-primary/30 text-primary hover:border-primary transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              menu_book
+            </span>
+            <span className="flex-1 font-label-md text-label-md font-bold">
+              Review syntax first
+            </span>
+            <span className="material-symbols-outlined text-[18px]">
+              chevron_right
+            </span>
+          </Link>
+        )}
         <ul className="overflow-y-auto custom-scrollbar divide-y divide-outline-variant">
           {node.problems.map((slug) => {
             const p = lookup.get(slug);

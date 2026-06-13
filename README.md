@@ -23,6 +23,19 @@ The API base URL is read from `NEXT_PUBLIC_LEETCODE_API_BASE` (see `.env.local`)
 defaulting to the hosted `https://leetcode-api-pied.vercel.app`. Point it at a
 self-hosted instance (e.g. `http://localhost:8000`) if you run the API yourself.
 
+All env vars are optional — see [`.env.example`](.env.example) for the full
+list. With none set the app runs against the live API; add the
+`NEXT_PUBLIC_SUPABASE_*` vars to read the persisted catalog instead.
+
+### Deploy (Vercel)
+
+Import the repo into Vercel — the Next.js framework preset is detected
+automatically (build `next build`, no extra config). Add any
+`NEXT_PUBLIC_*` vars from `.env.example` under **Settings → Environment
+Variables**; `.env.local` is gitignored and not uploaded. The
+`SUPABASE_SERVICE_ROLE_KEY` belongs to the offline sync only and should **not**
+be set on Vercel.
+
 ## Architecture
 
 - **No backend / no database.** Problem data is fetched live from the API and

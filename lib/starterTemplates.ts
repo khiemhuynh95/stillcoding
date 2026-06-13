@@ -17,6 +17,7 @@ export const LANGUAGES: LanguageDef[] = [
   { id: "java", label: "Java", monaco: "java" },
   { id: "cpp", label: "C++", monaco: "cpp" },
   { id: "go", label: "Go", monaco: "go" },
+  { id: "sql", label: "SQL", monaco: "sql" },
 ];
 
 export const DEFAULT_LANGUAGE = "python3";
@@ -61,10 +62,15 @@ public:
     // Write your solution here
 }
 `,
+  sql: `-- Write your query here
+SELECT *
+FROM table_name;
+`,
 };
 
 const LINE_COMMENT: Record<string, string> = {
   python3: "#",
+  sql: "--",
 };
 
 export function getStarterTemplate(langId: string, title?: string): string {

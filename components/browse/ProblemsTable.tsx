@@ -32,9 +32,6 @@ export function ProblemsTable({
           <th className="py-4 px-4 sm:px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider w-28">
             Difficulty
           </th>
-          <th className="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider w-16 hidden sm:table-cell">
-            Open
-          </th>
         </tr>
       </thead>
       <tbody className="divide-y divide-outline-variant">
@@ -69,11 +66,6 @@ export function ProblemsTable({
             </td>
             <td className="py-4 px-4 sm:px-6">
               <DifficultyBadge difficulty={p.difficulty} />
-            </td>
-            <td className="py-4 px-6 hidden sm:table-cell">
-              <span className="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
-                code
-              </span>
             </td>
           </tr>
         ))}

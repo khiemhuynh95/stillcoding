@@ -9,6 +9,7 @@ import { Footer } from "@/components/layout/Footer";
 import { ProblemDescription } from "@/components/coding/ProblemDescription";
 import { CodeEditor } from "@/components/coding/CodeEditor";
 import { SaveToList } from "@/components/coding/SaveToList";
+import { BrownNoise } from "@/components/coding/BrownNoise";
 import { useProblem } from "@/hooks/useProblems";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useCodeDraft } from "@/hooks/useCodeDraft";
@@ -75,6 +76,7 @@ export default function CodingPage() {
           {status === "unsaved" ? "Saving…" : "Saved"}
         </span>
       </span>
+      <BrownNoise />
       <SaveToList slug={slug} />
       <button
         type="button"
