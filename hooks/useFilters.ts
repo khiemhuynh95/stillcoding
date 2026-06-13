@@ -10,6 +10,8 @@ export type SortKey = "newest" | "oldest" | "easiest" | "hardest";
 export interface Filters {
   difficulties: Difficulty[];
   tag: string | null;
+  /** Active problem list id (preset like "blind-75" or "user:..."), or null. */
+  list: string | null;
   sort: SortKey;
   search: string;
 }
@@ -17,6 +19,7 @@ export interface Filters {
 export const defaultFilters: Filters = {
   difficulties: [],
   tag: null,
+  list: null,
   sort: "newest",
   search: "",
 };

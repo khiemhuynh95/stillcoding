@@ -11,6 +11,8 @@ import { RandomFab } from "@/components/browse/RandomFab";
 import { useFilters, type SortKey } from "@/hooks/useFilters";
 import { useProblems, useTags } from "@/hooks/useProblems";
 import { useSolvedStatus } from "@/hooks/useSolvedStatus";
+import { useLists } from "@/hooks/useLists";
+import { findPresetList, isUserListId, type ProblemList } from "@/lib/lists";
 import type { Difficulty, ProblemSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -57,10 +59,31 @@ export default function BrowsePage() {
   const { data: problems, isLoading, isError, refetch } = useProblems(filters.tag);
   const { data: tags, isLoading: tagsLoading } = useTags();
   const { map: solvedMap, hydrated: solvedHydrated } = useSolvedStatus();
+  const {
+    lists: userLists,
+    createList,
+    deleteList,
+    hydrated: listsHydrated,
+  } = useLists();
   const [page, setPage] = useState(1);
+
+  // The list currently being browsed (preset or user-made), if any.
+  const activeList: ProblemList | null = useMemo(() => {
+    if (!filters.list) return null;
+    if (isUserListId(filters.list)) {
+      return userLists.find((l) => l.id === filters.list) ?? null;
+    }
+    return findPresetList(filters.list) ?? null;
+  }, [filters.list, userLists]);
 
   const view = useMemo(() => {
     let list = problems ?? [];
+    if (activeList) {
+      const order = new Map(activeList.slugs.map((s, i) => [s, i] as const));
+      list = list
+        .filter((p) => order.has(p.title_slug))
+        .sort((a, b) => order.get(a.title_slug)! - order.get(b.title_slug)!);
+    }
     if (filters.difficulties.length) {
       list = list.filter((p) => filters.difficulties.includes(p.difficulty));
     }
@@ -70,13 +93,14 @@ export default function BrowsePage() {
         (p) => p.title.toLowerCase().includes(q) || p.frontend_id.includes(q),
       );
     }
-    return sortProblems(list, filters.sort);
-  }, [problems, filters.difficulties, filters.search, filters.sort]);
+    // A list keeps its curated order; otherwise apply the sort dropdown.
+    return activeList ? list : sortProblems(list, filters.sort);
+  }, [problems, activeList, filters.difficulties, filters.search, filters.sort]);
 
   // Reset to the first page whenever the result set changes.
   useEffect(() => {
     setPage(1);
-  }, [filters.difficulties, filters.tag, filters.search, filters.sort]);
+  }, [filters.difficulties, filters.tag, filters.list, filters.search, filters.sort]);
 
   const pageCount = Math.max(1, Math.ceil(view.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -90,8 +114,12 @@ export default function BrowsePage() {
         : [...f.difficulties, d],
     }));
 
+  // Tag and list are mutually exclusive scopes — picking one clears the other.
   const selectTag = (slug: string | null) =>
-    setFilters((f) => ({ ...f, tag: slug }));
+    setFilters((f) => ({ ...f, tag: slug, list: slug ? null : f.list }));
+
+  const selectList = (id: string | null) =>
+    setFilters((f) => ({ ...f, list: id, tag: id ? null : f.tag }));
 
   const activeTagName =
     tags?.find((t) => t.slug === filters.tag)?.name ?? filters.tag;
@@ -103,8 +131,16 @@ export default function BrowsePage() {
         <Sidebar
           difficulties={filters.difficulties}
           tag={filters.tag}
+          activeListId={filters.list}
+          userLists={userLists}
+          listsHydrated={listsHydrated}
+          solvedMap={solvedMap}
+          solvedHydrated={solvedHydrated}
           onToggleDifficulty={toggleDifficulty}
           onSelectTag={selectTag}
+          onSelectList={selectList}
+          onCreateList={createList}
+          onDeleteList={deleteList}
           tags={tags}
           tagsLoading={tagsLoading}
         />
@@ -165,6 +201,22 @@ export default function BrowsePage() {
                       type="button"
                       onClick={() => selectTag(null)}
                       aria-label="Clear topic filter"
+                      className="material-symbols-outlined text-[16px]"
+                    >
+                      close
+                    </button>
+                  </span>
+                )}
+                {activeList && (
+                  <span className="flex items-center gap-1 pl-3 pr-2 py-1.5 rounded-full bg-primary-tint text-primary text-label-md font-label-md">
+                    <span className="material-symbols-outlined text-[16px]">
+                      list_alt
+                    </span>
+                    {activeList.name}
+                    <button
+                      type="button"
+                      onClick={() => selectList(null)}
+                      aria-label="Clear list filter"
                       className="material-symbols-outlined text-[16px]"
                     >
                       close

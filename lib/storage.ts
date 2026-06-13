@@ -37,5 +37,6 @@ export const storageKeys = {
   solved: "solved",
   lang: "lang",
   theme: "theme",
+  lists: "lists",
   draft: (slug: string, lang: string) => `draft:${slug}:${lang}`,
 } as const;
