@@ -1,10 +1,16 @@
 "use client";
 
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import type { ProblemSummary } from "@/lib/types";
 import type { SolvedMap } from "@/hooks/useSolvedStatus";
+import { getProblem } from "@/lib/leetcode";
+import { prefetchEditor } from "@/lib/prefetch";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { StatusIcon } from "./StatusIcon";
+
+const FIVE_MIN = 5 * 60 * 1000;
 
 export function ProblemsTable({
   problems,
@@ -16,8 +22,24 @@ export function ProblemsTable({
   hydrated: boolean;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const warmed = useRef<Set<string>>(new Set());
 
   const open = (slug: string) => router.push(`/problems/${slug}`);
+
+  // On hover/focus, warm everything the coding page needs so the click is
+  // instant: the route chunk, the problem detail query, and the editor chunk.
+  const warm = (slug: string) => {
+    if (warmed.current.has(slug)) return;
+    warmed.current.add(slug);
+    router.prefetch(`/problems/${slug}`);
+    queryClient.prefetchQuery({
+      queryKey: ["problem", slug],
+      queryFn: () => getProblem(slug),
+      staleTime: FIVE_MIN,
+    });
+    prefetchEditor();
+  };
 
   return (
     <table className="w-full text-left border-collapse">
@@ -39,6 +61,8 @@ export function ProblemsTable({
           <tr
             key={p.id}
             onClick={() => open(p.title_slug)}
+            onMouseEnter={() => warm(p.title_slug)}
+            onFocus={() => warm(p.title_slug)}
             className="group hover:bg-surface-container-low/40 transition-colors cursor-pointer"
           >
             <td className="py-4 px-4 sm:px-6">

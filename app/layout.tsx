@@ -29,8 +29,14 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400&display=swap"
           rel="stylesheet"
         />
+        {/*
+          The app only ever varies the FILL axis (via the `.fill` class); opsz,
+          weight and grade are fixed by globals.css. Pinning those three to single
+          values ships a much smaller icon font. `display=block` avoids a flash of
+          the raw ligature text (e.g. "search") before the font loads.
+        */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block"
           rel="stylesheet"
         />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
