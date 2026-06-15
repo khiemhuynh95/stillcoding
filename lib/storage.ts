@@ -41,5 +41,6 @@ export const storageKeys = {
   noiseAutoPlay: "noiseAutoPlay",
   noiseVolume: "noiseVolume",
   noiseTone: "noiseTone",
+  collabIdentity: "collabIdentity",
   draft: (slug: string, lang: string) => `draft:${slug}:${lang}`,
 } as const;

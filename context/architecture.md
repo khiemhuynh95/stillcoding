@@ -11,6 +11,7 @@
 | Layout       | `react-resizable-panels`                     | Resizable description/editor split                            |
 | Catalog data | leetcode-api → Supabase (Postgres) + fallback | Problem list + detail; persisted in DB, falls back to live API |
 | Sync         | Supabase pg_cron + pg_net + Deno Edge Fn     | Daily refresh of the persisted catalog                        |
+| Collab       | Yjs CRDT + Supabase Realtime (Broadcast)     | Real-time co-editing of a shared code buffer (opt-in, link-based) |
 | Sanitizer    | `isomorphic-dompurify`                        | Sanitizes problem HTML before render                          |
 | Analytics    | `@vercel/analytics`                          | Page analytics on Vercel                                      |
 
@@ -56,6 +57,18 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 - **localStorage (`devstudio:` prefix)**: all user state — filters,
   solved/attempted status, per-(problem,language) code drafts,
   user-created lists, selected language, theme. Not synced anywhere.
+- **Supabase `collab_sessions` (client-writable)**: the one table the
+  app writes to. Holds a shared code buffer for live co-editing — id
+  (unguessable), slug, language, a base64 Yjs snapshot (`doc`),
+  `created_at`, `updated_at`. RLS allows anon `insert`/`select`/`update`
+  on this table **only**; it is a capability URL (anyone with the link
+  can read + edit). Live keystrokes flow over Realtime Broadcast (not
+  the DB); the row is just a debounced snapshot for late-joiners/reload.
+  **Retention**: a daily pg_cron job deletes sessions idle for 30 days
+  (by `updated_at`, which the snapshot save bumps — active sessions
+  slide forward, only idle ones are reaped). The shared buffer is
+  **not** part of the user's localStorage practice state — users
+  "fork" a session back into a local draft to keep a copy.
 
 ## Auth and Access Model
 
@@ -67,6 +80,12 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 - Catalog writes happen only offline, via the Edge Function running
   under the service role. The `SUPABASE_SERVICE_ROLE_KEY` is never
   exposed to the app / Vercel.
+- **One scoped client-write exception**: the collaboration feature
+  lets the anon client `insert`/`select`/`update` `collab_sessions`
+  (and nothing else). Still no accounts — collaborators are anonymous,
+  identified by an ephemeral display name + color held in localStorage.
+  Collaboration requires Supabase env vars; when unset, the feature is
+  simply hidden and the rest of the app runs keyless as before.
 
 ## Invariants
 
@@ -89,3 +108,8 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 7. Supabase detail is fetched by `title_slug`, never numeric id (the
    API mis-resolves bare numbers as frontend ids); "has detail" means
    `detail_synced_at != null`, not `content != null`.
+8. The **only** client write path is `collab_sessions`; every catalog
+   table (`problems`, `tags`, `sync_runs`) stays anon read-only. User
+   practice state (drafts, solved status, lists) stays localStorage-only
+   and is never written to Supabase — a collab session is a separate,
+   ephemeral, opt-in document.

@@ -41,6 +41,25 @@ Update this file after every meaningful implementation change.
   ("Cloud Gaming — Membership & Billing", custom `C3`) and a new
   `beyond-leetcode` preset list to hold this style of problem (class
   design / simulation, not single-function puzzles).
+- **Collaboration (real-time co-editing)** — shippable, built across 3
+  increments: (1) `collab_sessions` table + scoped RLS (anon
+  insert/select/update) + size cap + daily retention sweep (delete
+  sessions idle 30 days by `updated_at`) cron
+  (`20260615000001_collab_sessions.sql`) and `lib/collab.ts` session
+  CRUD; (2) Yjs CRDT + a Supabase Realtime **Broadcast** provider
+  (`SupabaseYjsProvider`) + `hooks/useCollabSession.ts` (snapshot
+  load/debounced save, presence, ephemeral name+color identity); (3) a
+  custom Monaco⇄Yjs binding (`lib/monacoYjsBinding.ts` — written by
+  hand so it drives the *CDN-loaded* Monaco instead of bundling
+  y-monaco's own `monaco-editor` copy), `ShareButton` (start session /
+  copy link / presence / rename / leave), `?session=` page wiring
+  (collab mode bypasses localStorage autosave, locks language, hides
+  Reset), and remote cursors/selections via injected per-client CSS.
+  `npm run build` + `tsc --noEmit` pass.
+  **Manual steps before it works in prod:** apply the new migration
+  (`supabase db push` or SQL editor) and ensure Realtime is enabled on
+  the project (Broadcast is on by default; no table replication
+  needed). Feature is hidden when Supabase env vars are unset.
 - **In-browser Python runner (Pyodide)** — Run button + output console
   on the coding screen, Python-only. CPython runs client-side in a Web
   Worker (`public/pyodide-worker.js`, Pyodide loaded lazily from the
@@ -88,6 +107,19 @@ Update this file after every meaningful implementation change.
 - **Supabase persists the catalog (2026-06-12)** — reversed the
   original "no Supabase" call for a faster, stable catalog; kept the
   live-API fallback so the app still runs keyless.
+- **Collaboration via Yjs + Supabase Realtime (2026-06-15)** — chose
+  real-time co-editing (Tier 3) over a stateless snapshot link or an
+  async persisted session. Transport split: live keystrokes + cursors
+  over Supabase Realtime Broadcast (ephemeral, no per-keystroke DB
+  write); persistence via one debounced base64 Yjs snapshot in
+  `collab_sessions`. This is the **first client write to Supabase** —
+  deliberately scoped to a single table with its own RLS; the catalog
+  stays read-only. Identity stays anonymous (ephemeral name + color in
+  localStorage); the share link is a capability URL retained until 30
+  days idle (daily pg_cron reap by `updated_at`). v1 locks one session
+  to one (problem, language). Open risk accepted for v1: anon insert is
+  open (mitigated by unguessable ids, a `doc` size cap, and retention)
+  rather than gated.
 - **In-browser runner via Pyodide (2026-06-14)** — partially reverses
   "editor-only". Python runs client-side in WASM (no backend, sandboxed
   by construction), which fits the device-local model better than the
