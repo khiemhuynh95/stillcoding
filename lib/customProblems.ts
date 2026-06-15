@@ -106,6 +106,131 @@ var isBalanced = function (s) {
 `,
     },
   },
+  {
+    frontend_id: "C3",
+    title: "Cloud Gaming — Membership & Billing",
+    title_slug: "cloud-gaming-membership-billing",
+    difficulty: "Medium",
+    tags: ["Design", "Simulation"],
+    content: `<p>You're building the billing system for a cloud gaming service. Members stream game sessions, and depending on their membership tier they get a number of free sessions before they start paying an hourly rate. This is a multi-part <em>build &amp; debug</em> exercise — implement the methods and fix the planted bug, then run the bundled <code>unittest</code> suite.</p>
+<p><strong>Data model</strong></p>
+<ul>
+<li><code>MemberType</code> : FREE, PLUS, MAX. Only PLUS and MAX are <em>paid</em> memberships.</li>
+<li><code>Session</code> : <code>session_id</code>, <code>start_time</code>, <code>end_time</code> (start/end are ints, in minutes).</li>
+<li><code>Member</code> : <code>id</code>, <code>member_type</code>, and a list of <code>Session</code> objects.</li>
+<li><code>MemberShip</code> : holds a list of <code>Member</code>s.</li>
+</ul>
+<p><strong>Task 1 — Bug fix.</strong> <code>count_paid_members()</code> should count members on a paid tier (PLUS or MAX), but it returns the wrong number. Find and fix the bug.</p>
+<p><strong>Task 2 — Average duration.</strong> Implement <code>get_avg_durations()</code>: return a map (member id → average session duration in minutes). For a session, duration = <code>end_time - start_time</code>. A member with no sessions maps to <code>None</code>.</p>
+<p><strong>Task 3 — Due payments.</strong> Implement <code>get_due_payments()</code> returning <code>{member_id: amount_due}</code>. Billing rules:</p>
+<ul>
+<li>FREE : first 1 session free, then $10/hour</li>
+<li>PLUS : first 3 sessions free, then $8/hour</li>
+<li>MAX&nbsp; : first 6 sessions free, then $10/hour</li>
+</ul>
+<p>Sessions beyond the free quota are charged at the tier's hourly rate. Each charged session's duration is rounded <strong>up</strong> to the next whole hour before billing (e.g. 90 minutes → 2 hours). The first N sessions in a member's list are the free ones.</p>`,
+    hints: [
+      "Task 1: the loop only matches one of the two paid tiers — both PLUS and MAX should count.",
+      "Task 3: use math.ceil(duration_minutes / 60) for the billed hours, and skip the first N (free) sessions per tier.",
+    ],
+    starterCode: {
+      python3: `import unittest
+from enum import Enum
+
+
+class MemberType(Enum):
+    FREE = 1
+    PLUS = 2
+    MAX = 3
+
+
+class Session:
+    def __init__(self, session_id, start_time, end_time):
+        self.session_id = session_id
+        self.start_time = start_time
+        self.end_time = end_time
+
+    def get_duration(self):
+        return self.end_time - self.start_time
+
+
+class Member:
+    def __init__(self, member_id, member_type, sessions=None):
+        self.id = member_id
+        self.member_type = member_type
+        self.sessions = list(sessions) if sessions else []
+
+    def add_session(self, session):
+        self.sessions.append(session)
+
+
+class MemberShip:
+    def __init__(self, members=None):
+        self.members = list(members) if members else []
+
+    def add_member(self, member):
+        self.members.append(member)
+
+    # ---- Task 1 --------------------------------------------------------
+    def count_paid_members(self):
+        count = 0
+        for member in self.members:
+            if member.member_type == MemberType.PLUS:
+                count += 1
+        return count
+
+    # ---- Task 2 --------------------------------------------------------
+    def get_avg_durations(self):
+        pass
+
+    # ---- Task 3 --------------------------------------------------------
+    def get_due_payments(self):
+        pass
+
+
+class TestMembership(unittest.TestCase):
+    def setUp(self):
+        m1 = Member(1, MemberType.FREE, [
+            Session(1, 0, 30),       # 30
+            Session(2, 60, 120),     # 60
+            Session(3, 180, 300),    # 120
+        ])
+        m2 = Member(2, MemberType.PLUS, [
+            Session(4, 0, 60),       # 60
+            Session(5, 120, 180),    # 60
+            Session(6, 240, 300),    # 60
+            Session(7, 360, 450),    # 90
+        ])
+        m3 = Member(3, MemberType.MAX, [
+            Session(8, 0, 45),       # 45
+            Session(9, 60, 135),     # 75
+        ])
+        m4 = Member(4, MemberType.FREE)
+        self.membership = MemberShip([m1, m2, m3, m4])
+
+    def test_count_paid_members(self):
+        self.assertEqual(self.membership.count_paid_members(), 2)
+
+    def test_avg_durations(self):
+        avg = self.membership.get_avg_durations()
+        self.assertAlmostEqual(avg[1], 70.0)
+        self.assertAlmostEqual(avg[2], 67.5)
+        self.assertAlmostEqual(avg[3], 60.0)
+        self.assertIsNone(avg[4])
+
+    def test_due_payments(self):
+        due = self.membership.get_due_payments()
+        self.assertAlmostEqual(due[1], 30.0)
+        self.assertAlmostEqual(due[2], 16.0)
+        self.assertAlmostEqual(due[3], 0.0)
+        self.assertAlmostEqual(due[4], 0.0)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
+`,
+    },
+  },
 ];
 
 const customId = (slug: string) => `custom-${slug}`;

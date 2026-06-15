@@ -37,6 +37,10 @@ Update this file after every meaningful implementation change.
 ## In Progress
 
 - Rewording batches of problem statements (ongoing content pass).
+- **Non-traditional problems** — added the first build & debug exercise
+  ("Cloud Gaming — Membership & Billing", custom `C3`) and a new
+  `beyond-leetcode` preset list to hold this style of problem (class
+  design / simulation, not single-function puzzles).
 
 ## Next Up
 

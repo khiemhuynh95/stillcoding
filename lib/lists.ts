@@ -492,6 +492,14 @@ const TOP_100_LIKED: string[] = [
   "find-the-duplicate-number",
 ];
 
+// ── Beyond LeetCode (non-traditional build & debug problems) ────────────
+// Multi-part, real-world style exercises — class design, bug-fixing, and
+// simulation — rather than single-function algorithm puzzles. These live in
+// lib/customProblems.ts, so their slugs only resolve from the custom source.
+const BEYOND_LEETCODE: string[] = [
+  "cloud-gaming-membership-billing",
+];
+
 export const PRESET_LISTS: ProblemList[] = [
   {
     id: "blind-75",
@@ -519,6 +527,14 @@ export const PRESET_LISTS: ProblemList[] = [
     name: "Top 100 Liked",
     description: "LeetCode's 100 most-liked questions.",
     slugs: TOP_100_LIKED,
+    preset: true,
+  },
+  {
+    id: "beyond-leetcode",
+    name: "Beyond LeetCode",
+    description:
+      "Real-world build & debug exercises — class design and simulation, not single-function puzzles.",
+    slugs: BEYOND_LEETCODE,
     preset: true,
   },
 ];
