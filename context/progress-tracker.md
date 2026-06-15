@@ -54,6 +54,20 @@ Update this file after every meaningful implementation change.
   problems (C1/C2/C3) ship example `unittest` blocks inline in
   `starterCode.python3` as a starting point. Other languages stay
   editor-only.
+  - **Worker cache-bust:** the worker is loaded via
+    `/pyodide-worker.js?v=N`. An earlier (flaky `setStdout`-streaming)
+    build got pinned in browsers under `?v=2`, which surfaced as an
+    empty console on C3 (real C3 code + current worker provably emits
+    `unittest` output; an empty console means a stale worker is running).
+    Bumped to `?v=3` (and `RUNNER_VERSION = 3`). **Always bump both when
+    editing the worker** or browsers/CDN keep serving the cached copy.
+  - **Console layout fix:** the CodeEditor root `<section>` was `flex-1`
+    without `min-h-0`, so it wouldn't shrink below content height. When the
+    192px OutputConsole opened, Monaco didn't yield space and the console
+    body was pushed past the bottom and clipped by `<main>`'s
+    `overflow-hidden` — only the "Finished" header showed, output invisible.
+    Added `min-h-0` to the section so the editor shrinks and the console
+    body stays on screen.
 
 ## Next Up
 

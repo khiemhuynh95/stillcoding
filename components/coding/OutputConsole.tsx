@@ -25,13 +25,17 @@ export function OutputConsole({
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Stick to the bottom as new lines stream in.
+  const busy = status === "loading-runtime" || status === "running";
+
+  // While output is still streaming, follow the bottom. Once the run finishes
+  // (Pyodide delivers stdout/stderr in one batch), jump to the top so the first
+  // line — e.g. the first failing test / traceback — is visible without having
+  // to scroll up in this short panel.
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [output]);
-
-  const busy = status === "loading-runtime" || status === "running";
+    if (!el) return;
+    el.scrollTop = busy ? el.scrollHeight : 0;
+  }, [output, busy]);
 
   return (
     <div className="flex flex-col border-t border-outline-variant bg-surface-container-lowest shrink-0 h-48">
@@ -74,7 +78,9 @@ export function OutputConsole({
               ? "Loading the Python runtime (first run downloads ~10 MB)…"
               : busy
                 ? "Starting…"
-                : "Run your code to see output here."}
+                : status === "done" || status === "error"
+                  ? "Program finished with no output. Add print(...) or run unittest.main() to see results."
+                  : "Run your code to see output here."}
           </span>
         ) : (
           output.map((line, i) => (
