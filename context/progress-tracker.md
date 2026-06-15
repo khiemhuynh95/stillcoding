@@ -41,6 +41,19 @@ Update this file after every meaningful implementation change.
   ("Cloud Gaming — Membership & Billing", custom `C3`) and a new
   `beyond-leetcode` preset list to hold this style of problem (class
   design / simulation, not single-function puzzles).
+- **In-browser Python runner (Pyodide)** — Run button + output console
+  on the coding screen, Python-only. CPython runs client-side in a Web
+  Worker (`public/pyodide-worker.js`, Pyodide loaded lazily from the
+  jsdelivr CDN on first run); `hooks/useRunPython.ts` drives it with a
+  fresh-worker-per-run model (terminate = cancel/timeout; 15s execution
+  cap, runtime download uncapped). `components/coding/OutputConsole.tsx`
+  streams stdout/stderr. The worker execs user code into the real
+  `__main__` dict so a trailing `unittest.main()` works. **Run just
+  executes the editor buffer — there is no separate grader.** Users
+  write and run their own test cases directly in the code; the custom
+  problems (C1/C2/C3) ship example `unittest` blocks inline in
+  `starterCode.python3` as a starting point. Other languages stay
+  editor-only.
 
 ## Next Up
 
@@ -49,9 +62,10 @@ Update this file after every meaningful implementation change.
 
 ## Open Questions
 
-- None blocking. Future extension points (not committed): code
-  runner (Judge0/Piston), user accounts + cross-device sync,
-  graduating custom problems to Supabase.
+- None blocking. Future extension points (not committed): multi-language
+  execution (server-side Judge0/Piston — Python already runs in-browser
+  via Pyodide), user accounts + cross-device sync, graduating custom
+  problems to Supabase.
 
 ## Architecture Decisions
 
@@ -60,7 +74,11 @@ Update this file after every meaningful implementation change.
 - **Supabase persists the catalog (2026-06-12)** — reversed the
   original "no Supabase" call for a faster, stable catalog; kept the
   live-API fallback so the app still runs keyless.
-- **Editor-only, no runner** — the API can't execute code.
+- **In-browser runner via Pyodide (2026-06-14)** — partially reverses
+  "editor-only". Python runs client-side in WASM (no backend, sandboxed
+  by construction), which fits the device-local model better than the
+  server-side Judge0/Piston option originally assumed. Python-only for
+  now; other languages remain editor-only pending a server runner.
 - **Fast browse table** — omits acceptance rate + tags (not in the
   list endpoint).
 - **Fetch detail by `title_slug`, not numeric id** — the API
@@ -70,8 +88,8 @@ Update this file after every meaningful implementation change.
 
 ## Session Notes
 
-- `CLAUDE.md` references these files as `context/…`, but they live in
-  `agent-context/`. Read order is unchanged.
+- Context files live in `context/` (matching CLAUDE.md's documented
+  read order).
 - Supabase project: ref `npliviizqlndlyctvhgo` ("still-coding",
   us-east-2). Setup steps in `supabase/README.md`. The Deno function
   is excluded from the Next.js typecheck via tsconfig.

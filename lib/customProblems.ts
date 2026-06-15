@@ -16,6 +16,12 @@ import { slugify } from "./utils";
  * the description pane. `starterCode` is optional per-language boilerplate —
  * keys are the language ids from lib/starterTemplates.ts
  * (python3, javascript, typescript, java, cpp, go).
+ *
+ * Running code is Python-only (in-browser via Pyodide) and just executes the
+ * editor buffer. There is no separate grader — if you want a problem to be
+ * runnable with example checks, put a small `unittest` block (or plain prints)
+ * straight in `starterCode.python3` so it shows in the editor; the solver edits
+ * and runs their own test cases from there.
  * ─────────────────────────────────────────────────────────────────────────
  */
 export interface CustomProblem {
@@ -55,6 +61,20 @@ Output: 0</pre>
     def addDigits(self, n: int) -> int:
         # Write your solution here
         pass
+
+
+# Add and run your own test cases, then press Run.
+import unittest
+
+
+class Tests(unittest.TestCase):
+    def test_examples(self):
+        self.assertEqual(Solution().addDigits(38), 2)
+        self.assertEqual(Solution().addDigits(0), 0)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
 `,
       javascript: `/**
  * @param {number} n
@@ -95,6 +115,20 @@ Output: false</pre>
     def isBalanced(self, s: str) -> bool:
         # Write your solution here
         pass
+
+
+# Add and run your own test cases, then press Run.
+import unittest
+
+
+class Tests(unittest.TestCase):
+    def test_examples(self):
+        self.assertTrue(Solution().isBalanced("{[()]}"))
+        self.assertFalse(Solution().isBalanced("([)]"))
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
 `,
       javascript: `/**
  * @param {string} s
@@ -134,8 +168,7 @@ var isBalanced = function (s) {
       "Task 3: use math.ceil(duration_minutes / 60) for the billed hours, and skip the first N (free) sessions per tier.",
     ],
     starterCode: {
-      python3: `import unittest
-from enum import Enum
+      python3: `from enum import Enum
 
 
 class MemberType(Enum):
@@ -186,6 +219,10 @@ class MemberShip:
     # ---- Task 3 --------------------------------------------------------
     def get_due_payments(self):
         pass
+
+
+# Implement the methods and fix the bug above, then press Run.
+import unittest
 
 
 class TestMembership(unittest.TestCase):

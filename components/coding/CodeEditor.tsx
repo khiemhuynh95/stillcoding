@@ -4,8 +4,10 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { languageById } from "@/lib/starterTemplates";
 import type { SaveStatus } from "@/hooks/useCodeDraft";
+import { useRunPython } from "@/hooks/useRunPython";
 import { LanguageSelect } from "./LanguageSelect";
 import { EditorStatusBar } from "./EditorStatusBar";
+import { OutputConsole } from "./OutputConsole";
 
 const MonacoEditor = dynamic(
   () => import("@monaco-editor/react").then((m) => m.default),
@@ -111,6 +113,25 @@ export function CodeEditor({
   const [pos, setPos] = useState({ line: 1, column: 1 });
   const editorRef = useRef<CursorEditor | null>(null);
 
+  // In-browser execution is Python-only (Pyodide). Other languages stay
+  // editor-only until a server-side runner exists.
+  const isPython = langId === "python3";
+  const {
+    status: runStatus,
+    output,
+    isBusy,
+    run,
+    cancel,
+    clear,
+  } = useRunPython();
+  const [consoleOpen, setConsoleOpen] = useState(false);
+
+  const handleRun = () => {
+    setConsoleOpen(true);
+    // Defer so the console renders even if run() somehow throws synchronously.
+    setTimeout(() => run(code), 0);
+  };
+
   const handleMount = (editor: CursorEditor) => {
     editorRef.current = editor;
     editor.onDidChangeCursorPosition((e) => {
@@ -124,6 +145,32 @@ export function CodeEditor({
       <div className="h-10 flex items-center justify-between px-4 bg-surface-container-low border-b border-outline-variant shrink-0">
         <LanguageSelect value={langId} onChange={onLanguageChange} />
         <div className="flex items-center gap-3">
+          {isBusy ? (
+            <button
+              type="button"
+              onClick={cancel}
+              title="Stop execution"
+              className="flex items-center gap-1 text-error hover:opacity-80 transition-opacity text-label-md font-label-md"
+            >
+              <span className="material-symbols-outlined text-[18px]">stop_circle</span>
+              <span className="hidden sm:inline">Stop</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleRun}
+              disabled={!isPython}
+              title={
+                isPython
+                  ? "Run code (Python, in your browser)"
+                  : "In-browser run supports Python only"
+              }
+              className="flex items-center gap-1 text-primary hover:opacity-80 transition-opacity text-label-md font-label-md disabled:opacity-40 disabled:hover:opacity-40"
+            >
+              <span className="material-symbols-outlined text-[18px]">play_arrow</span>
+              <span className="hidden sm:inline">Run</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={onReset}
@@ -164,6 +211,15 @@ export function CodeEditor({
           }}
         />
       </div>
+
+      {consoleOpen && (
+        <OutputConsole
+          status={runStatus}
+          output={output}
+          onClear={clear}
+          onClose={() => setConsoleOpen(false)}
+        />
+      )}
 
       <EditorStatusBar
         status={status}
