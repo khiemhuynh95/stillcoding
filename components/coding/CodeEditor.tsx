@@ -2,7 +2,13 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import type * as Y from "yjs";
+import type { Awareness } from "y-protocols/awareness";
 import { languageById } from "@/lib/starterTemplates";
+import {
+  type ICodeEditor as BindableEditor,
+  MonacoYjsBinding,
+} from "@/lib/monacoYjsBinding";
 import type { SaveStatus } from "@/hooks/useCodeDraft";
 import { useRunPython } from "@/hooks/useRunPython";
 import { LanguageSelect } from "./LanguageSelect";
@@ -21,12 +27,15 @@ const MonacoEditor = dynamic(
   },
 );
 
-// Minimal structural type for the Monaco editor instance bits we use,
-// so we don't need to depend on the full `monaco-editor` types package.
-interface CursorEditor {
+// Minimal structural type for the Monaco editor instance bits we use, so we
+// don't need to depend on the full `monaco-editor` types package. Extends the
+// shape the Yjs binding needs (BindableEditor) with the cursor + value reads
+// the editor chrome uses.
+interface EditorInstance extends BindableEditor {
   onDidChangeCursorPosition(
     cb: (e: { position: { lineNumber: number; column: number } }) => void,
   ): void;
+  getValue(): string;
 }
 
 // Syntax themes per DESIGN.md: desaturated Google hues for long-session comfort
@@ -99,6 +108,7 @@ export function CodeEditor({
   onReset,
   status,
   lastSavedAt,
+  collab = null,
 }: {
   langId: string;
   code: string;
@@ -107,11 +117,34 @@ export function CodeEditor({
   onReset: () => void;
   status: SaveStatus;
   lastSavedAt: number | null;
+  /**
+   * When set, the editor is in live-collaboration mode: the Monaco model is
+   * bound to the shared Yjs text (localStorage autosave + controlled value are
+   * bypassed), the language is locked, and Reset is hidden.
+   */
+  collab?: { ytext: Y.Text; awareness: Awareness } | null;
 }) {
   const lang = languageById(langId);
   const isDark = useIsDark();
   const [pos, setPos] = useState({ line: 1, column: 1 });
-  const editorRef = useRef<CursorEditor | null>(null);
+  const editorRef = useRef<EditorInstance | null>(null);
+  const [editorMounted, setEditorMounted] = useState(false);
+  const collabActive = collab != null;
+
+  // Bind Monaco ⇄ Yjs once both the editor and the shared text are ready.
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !collab?.ytext || !collab?.awareness) return;
+    const model = editor.getModel();
+    if (!model) return;
+    const binding = new MonacoYjsBinding(
+      collab.ytext,
+      editor,
+      model,
+      collab.awareness,
+    );
+    return () => binding.destroy();
+  }, [collab?.ytext, collab?.awareness, editorMounted]);
 
   // In-browser execution is Python-only (Pyodide). Other languages stay
   // editor-only until a server-side runner exists.
@@ -128,12 +161,15 @@ export function CodeEditor({
 
   const handleRun = () => {
     setConsoleOpen(true);
+    // In collab mode the live buffer lives in the bound model, not `code`.
+    const source = collabActive ? (editorRef.current?.getValue() ?? code) : code;
     // Defer so the console renders even if run() somehow throws synchronously.
-    setTimeout(() => run(code), 0);
+    setTimeout(() => run(source), 0);
   };
 
-  const handleMount = (editor: CursorEditor) => {
+  const handleMount = (editor: EditorInstance) => {
     editorRef.current = editor;
+    setEditorMounted(true);
     editor.onDidChangeCursorPosition((e) => {
       setPos({ line: e.position.lineNumber, column: e.position.column });
     });
@@ -143,7 +179,11 @@ export function CodeEditor({
     <section className="flex-1 flex flex-col bg-surface-container-lowest min-w-0 min-h-0">
       {/* Editor header */}
       <div className="h-10 flex items-center justify-between px-4 bg-surface-container-low border-b border-outline-variant shrink-0">
-        <LanguageSelect value={langId} onChange={onLanguageChange} />
+        <LanguageSelect
+          value={langId}
+          onChange={onLanguageChange}
+          disabled={collabActive}
+        />
         <div className="flex items-center gap-3">
           {isBusy ? (
             <button
@@ -171,17 +211,19 @@ export function CodeEditor({
               <span className="hidden sm:inline">Run</span>
             </button>
           )}
-          <button
-            type="button"
-            onClick={onReset}
-            title="Reset to starter template"
-            className="flex items-center gap-1 text-outline hover:text-on-surface transition-colors text-label-md font-label-md"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              restart_alt
-            </span>
-            <span className="hidden sm:inline">Reset</span>
-          </button>
+          {!collabActive && (
+            <button
+              type="button"
+              onClick={onReset}
+              title="Reset to starter template"
+              className="flex items-center gap-1 text-outline hover:text-on-surface transition-colors text-label-md font-label-md"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                restart_alt
+              </span>
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -190,10 +232,12 @@ export function CodeEditor({
         <MonacoEditor
           height="100%"
           language={lang.monaco}
-          value={code}
+          // In collab mode the bound model owns the content — leave it
+          // uncontrolled so the binding isn't fought by the `value` prop.
+          value={collabActive ? undefined : code}
           theme={isDark ? "devstudio-dark" : "devstudio-light"}
           beforeMount={defineEditorThemes}
-          onChange={(value) => onChange(value ?? "")}
+          onChange={collabActive ? undefined : (value) => onChange(value ?? "")}
           onMount={handleMount}
           options={{
             minimap: { enabled: false },

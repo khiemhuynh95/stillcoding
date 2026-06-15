@@ -5,9 +5,11 @@ import { LANGUAGES } from "@/lib/starterTemplates";
 export function LanguageSelect({
   value,
   onChange,
+  disabled = false,
 }: {
   value: string;
   onChange: (id: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container-highest rounded-full text-on-surface-variant font-label-md text-label-md">
@@ -15,8 +17,10 @@ export function LanguageSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
         aria-label="Select language"
-        className="bg-transparent outline-none cursor-pointer text-on-surface pr-1"
+        title={disabled ? "Language is locked for this collaboration session" : undefined}
+        className="bg-transparent outline-none cursor-pointer text-on-surface pr-1 disabled:cursor-not-allowed"
       >
         {LANGUAGES.map((l) => (
           <option

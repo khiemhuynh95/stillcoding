@@ -90,6 +90,17 @@ review) layered on top of raw LeetCode data.
   `lib/customProblems.ts`, merged with the API behind one normalized
   shape so the UI is source-agnostic.
 
+### Collaboration
+
+- Real-time co-editing of a single problem's code buffer via a
+  shareable link. From the coding screen a user generates a link
+  (`/problems/[slug]?session=<id>`); anyone who opens it joins a live
+  Yjs-backed session and edits the same buffer with remote cursors and
+  collaborator presence. Anonymous (ephemeral name + color); the link
+  is a capability URL and sessions expire. Opt-in and only available
+  when Supabase is configured. Users can "fork" a session back into
+  their own local draft. One session = one (problem, language).
+
 ### Extras
 
 - Light/dark theme (restored before first paint, no flash).
@@ -116,6 +127,8 @@ review) layered on top of raw LeetCode data.
   API (it exposes none — generic scaffolds are used).
 - User accounts / auth / cross-device sync of user state (drafts,
   solved status, and user lists are not synced to Supabase).
+  Collaboration is the one shared-state feature, but it is a separate,
+  ephemeral, opt-in document — not a sync of the user's local state.
 - Acceptance rate / per-row tags in the browse table (not in the
   list endpoint; kept off the table for speed).
 

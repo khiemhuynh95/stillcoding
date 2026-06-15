@@ -28,6 +28,14 @@ if (URL && ANON_KEY) {
 
 export const supabaseEnabled = client != null;
 
+/**
+ * The shared Supabase client (or null when env vars are unset). Catalog reads
+ * go through the helpers below; the collaboration layer (lib/collab.ts) reuses
+ * this same client for its scoped writes and Realtime channels so the app keeps
+ * a single connection.
+ */
+export const supabaseClient = client;
+
 /** Shape of a row in public.problems (snake_case columns). */
 interface ProblemRow {
   id: string;
