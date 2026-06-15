@@ -14,6 +14,19 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["@tanstack/react-query", "isomorphic-dompurify"],
   },
+  // Never let the browser/CDN cache the Pyodide runner worker: a stale copy
+  // silently breaks code execution (no output), and the ?v= cache-bust alone
+  // isn't enough once a build is pinned under a given query string.
+  async headers() {
+    return [
+      {
+        source: "/pyodide-worker.js",
+        headers: [
+          { key: "Cache-Control", value: "no-store, max-age=0, must-revalidate" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

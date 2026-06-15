@@ -70,7 +70,9 @@ export function useRunPython() {
       let worker: Worker;
       try {
         // ?v= cache-busts the worker so browsers don't run a stale copy.
-        worker = new Worker("/pyodide-worker.js?v=2");
+        // Bump this (and RUNNER_VERSION in the worker) whenever the worker
+        // changes, otherwise the browser/CDN keeps serving the cached build.
+        worker = new Worker("/pyodide-worker.js?v=3");
       } catch (err) {
         append({
           stream: "stderr",

@@ -12,7 +12,7 @@
  * arrives in one batch when the run finishes — fine for this use case.
  */
 
-const RUNNER_VERSION = 2;
+const RUNNER_VERSION = 3;
 const PYODIDE_VERSION = "0.26.4";
 const INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 

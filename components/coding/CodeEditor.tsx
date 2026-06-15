@@ -140,7 +140,7 @@ export function CodeEditor({
   };
 
   return (
-    <section className="flex-1 flex flex-col bg-surface-container-lowest min-w-0">
+    <section className="flex-1 flex flex-col bg-surface-container-lowest min-w-0 min-h-0">
       {/* Editor header */}
       <div className="h-10 flex items-center justify-between px-4 bg-surface-container-low border-b border-outline-variant shrink-0">
         <LanguageSelect value={langId} onChange={onLanguageChange} />
