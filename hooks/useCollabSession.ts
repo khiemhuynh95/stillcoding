@@ -34,6 +34,12 @@ export interface CollabState {
   peers: CollabPeer[];
   /** Session metadata (slug, language) once loaded from the DB. */
   session: CollabSession | null;
+  /**
+   * True once the lookup has completed and no row exists — i.e. the session was
+   * never created or has been reaped by retention. Distinct from the initial
+   * loading state (where this is false and `session` is still null).
+   */
+  sessionMissing: boolean;
   /** The local user's identity. */
   me: CollabUser;
   /** Rename the local user (persisted + broadcast to peers). */
@@ -61,6 +67,7 @@ export function useCollabSession(sessionId: string | null): CollabState {
   const [awareness, setAwareness] = useState<Awareness | null>(null);
   const [peers, setPeers] = useState<CollabPeer[]>([]);
   const [session, setSession] = useState<CollabSession | null>(null);
+  const [sessionMissing, setSessionMissing] = useState(false);
 
   useEffect(() => {
     if (!sessionId || !collabEnabled) {
@@ -109,6 +116,7 @@ export function useCollabSession(sessionId: string | null): CollabState {
     void loadCollabSession(sessionId).then((row) => {
       if (cancelled) return;
       setSession(row);
+      setSessionMissing(row == null);
       if (row?.doc) Y.applyUpdate(doc, base64ToBytes(row.doc));
     });
 
@@ -125,6 +133,7 @@ export function useCollabSession(sessionId: string | null): CollabState {
       setAwareness(null);
       setPeers([]);
       setSession(null);
+      setSessionMissing(false);
     };
   }, [sessionId]);
 
@@ -135,5 +144,15 @@ export function useCollabSession(sessionId: string | null): CollabState {
     awarenessRef.current?.setLocalStateField("user", updated);
   }, []);
 
-  return { active, status, ytext, awareness, peers, session, me, setName };
+  return {
+    active,
+    status,
+    ytext,
+    awareness,
+    peers,
+    session,
+    sessionMissing,
+    me,
+    setName,
+  };
 }

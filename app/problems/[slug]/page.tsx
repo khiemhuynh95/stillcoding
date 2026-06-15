@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { TopNav } from "@/components/layout/TopNav";
@@ -16,7 +16,8 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useCodeDraft } from "@/hooks/useCodeDraft";
 import { useCollabSession } from "@/hooks/useCollabSession";
 import { useSolvedStatus } from "@/hooks/useSolvedStatus";
-import { storageKeys } from "@/lib/storage";
+import { collabEnabled } from "@/lib/collab";
+import { storageGet, storageKeys, storageRemove, storageSet } from "@/lib/storage";
 import { DEFAULT_LANGUAGE, getStarterTemplate } from "@/lib/starterTemplates";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ function CodingPage() {
   const slug = String(params?.slug ?? "");
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session");
+  const router = useRouter();
 
   const collab = useCollabSession(sessionId);
 
@@ -67,6 +69,30 @@ function CodingPage() {
     if (detail) document.title = `${detail.title} | StillCoding`;
   }, [detail]);
 
+  // Remember the most recent live session per problem so the user can resume it
+  // after navigating away; forget it once it's confirmed gone (expired).
+  useEffect(() => {
+    if (!sessionId) return;
+    if (collab.session && !collab.sessionMissing) {
+      storageSet(storageKeys.collabLast(slug), sessionId);
+    } else if (collab.sessionMissing) {
+      storageRemove(storageKeys.collabLast(slug));
+    }
+  }, [sessionId, collab.session, collab.sessionMissing, slug]);
+
+  // When back on the problem without a ?session= link, offer to resume the
+  // remembered session (unless dismissed for this visit).
+  const [resumeId, setResumeId] = useState<string | null>(null);
+  const [resumeDismissed, setResumeDismissed] = useState(false);
+  useEffect(() => {
+    if (sessionId || !collabEnabled) {
+      setResumeId(null);
+      return;
+    }
+    setResumeId(storageGet<string | null>(storageKeys.collabLast(slug), null));
+  }, [sessionId, slug]);
+  const showResume = !sessionId && !!resumeId && !resumeDismissed;
+
   const handleCodeChange = (value: string) => {
     setCode(value);
     if (hydrated && solvedMap[slug] === undefined) {
@@ -95,6 +121,7 @@ function CodingPage() {
         language={effectiveLang}
         code={code}
         sessionId={sessionId}
+        sessionMissing={collab.sessionMissing}
         status={collab.status}
         peers={collab.peers}
         me={collab.me}
@@ -126,6 +153,14 @@ function CodingPage() {
   return (
     <div className="h-screen flex flex-col">
       <TopNav actions={actions} />
+      {showResume && resumeId && (
+        <ResumeBanner
+          onResume={() =>
+            router.replace(`/problems/${slug}?session=${resumeId}`)
+          }
+          onDismiss={() => setResumeDismissed(true)}
+        />
+      )}
       <main className="flex flex-1 overflow-hidden">
         {isLoading ? (
           <CodingSkeleton />
@@ -147,20 +182,24 @@ function CodingPage() {
               )}
             />
             <Panel defaultSize={50} minSize={20} className="flex flex-col min-h-0">
-              <CodeEditor
-                langId={effectiveLang}
-                code={code}
-                onChange={handleCodeChange}
-                onLanguageChange={setLang}
-                onReset={resetToTemplate}
-                status={status}
-                lastSavedAt={lastSavedAt}
-                collab={
-                  collab.active && collab.ytext && collab.awareness
-                    ? { ytext: collab.ytext, awareness: collab.awareness }
-                    : null
-                }
-              />
+              {collab.active && collab.sessionMissing ? (
+                <ExpiredSession slug={slug} />
+              ) : (
+                <CodeEditor
+                  langId={effectiveLang}
+                  code={code}
+                  onChange={handleCodeChange}
+                  onLanguageChange={setLang}
+                  onReset={resetToTemplate}
+                  status={status}
+                  lastSavedAt={lastSavedAt}
+                  collab={
+                    collab.active && collab.ytext && collab.awareness
+                      ? { ytext: collab.ytext, awareness: collab.awareness }
+                      : null
+                  }
+                />
+              )}
             </Panel>
           </PanelGroup>
         )}
@@ -176,6 +215,73 @@ export default function CodingPageWrapper() {
     <Suspense fallback={<CodingSkeleton />}>
       <CodingPage />
     </Suspense>
+  );
+}
+
+/**
+ * Slim bar offering to rejoin a collaboration session the user previously had
+ * for this problem, shown when they return without the `?session=` link.
+ */
+function ResumeBanner({
+  onResume,
+  onDismiss,
+}: {
+  onResume: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-gutter lg:px-6 py-2 bg-primary-tint border-b border-outline-variant shrink-0">
+      <span className="material-symbols-outlined text-[18px] text-primary">
+        group
+      </span>
+      <span className="flex-1 text-body-sm text-on-surface">
+        You have a collaboration session for this problem.
+      </span>
+      <button
+        type="button"
+        onClick={onResume}
+        className="px-3 py-1 rounded bg-primary text-on-primary text-label-md font-label-md hover:opacity-90 shrink-0"
+      >
+        Resume
+      </button>
+      <button
+        type="button"
+        onClick={onDismiss}
+        title="Dismiss"
+        className="text-on-surface-variant hover:text-on-surface shrink-0"
+      >
+        <span className="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Shown in the editor panel when the `?session=` link points at a session that
+ * no longer exists — never created, or reaped after 30 days of inactivity.
+ */
+function ExpiredSession({ slug }: { slug: string }) {
+  const router = useRouter();
+  return (
+    <section className="flex-1 flex flex-col items-center justify-center text-center px-6 gap-3 bg-surface-container-lowest min-h-0">
+      <span className="material-symbols-outlined text-5xl text-on-surface-variant">
+        link_off
+      </span>
+      <p className="text-body-md text-on-surface font-semibold">
+        This collaboration session has expired
+      </p>
+      <p className="text-body-sm text-on-surface-variant max-w-xs">
+        The link is no longer active — sessions are removed after 30 days of
+        inactivity. You can keep working on this problem on your own.
+      </p>
+      <button
+        type="button"
+        onClick={() => router.replace(`/problems/${slug}`)}
+        className="mt-2 px-4 py-2 bg-primary text-on-primary rounded text-label-md font-label-md hover:opacity-90"
+      >
+        Continue solo
+      </button>
+    </section>
   );
 }
 
