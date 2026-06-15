@@ -9,6 +9,7 @@ import {
   createCollabSession,
   encodeSeedSnapshot,
 } from "@/lib/collab";
+import { storageKeys, storageRemove } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
 const STATUS_LABEL: Record<CollabStatus, string> = {
@@ -27,6 +28,7 @@ export function ShareButton({
   language,
   code,
   sessionId,
+  sessionMissing = false,
   status,
   peers,
   me,
@@ -36,6 +38,7 @@ export function ShareButton({
   language: string;
   code: string;
   sessionId: string | null;
+  sessionMissing?: boolean;
   status: CollabStatus;
   peers: CollabPeer[];
   me: CollabUser;
@@ -105,12 +108,16 @@ export function ShareButton({
   };
 
   const handleLeave = () => {
+    // Explicit leave = forget this session, so returning doesn't re-prompt to
+    // resume it (the session itself stays alive in the DB until retention).
+    storageRemove(storageKeys.collabLast(slug));
     router.replace(pathname);
     setOpen(false);
   };
 
-  // Not collaborating yet: a single "Collaborate" button.
-  if (!sessionId) {
+  // Not collaborating yet — or the session in the URL is gone (expired): show
+  // the plain "Collaborate" button, which can start a fresh session.
+  if (!sessionId || sessionMissing) {
     return (
       <button
         type="button"
