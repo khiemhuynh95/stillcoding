@@ -33,6 +33,7 @@ interface IDisposable {
 export interface ITextModel {
   getValue(): string;
   setValue(value: string): void;
+  setEOL(eol: number): void; // monaco.editor.EndOfLineSequence: LF = 0
   getOffsetAt(p: IPosition): number;
   getPositionAt(offset: number): IPosition;
   applyEdits(edits: { range: IRange; text: string }[]): void;
@@ -86,6 +87,12 @@ export class MonacoYjsBinding {
     this.doc = ytext.doc!;
     this.styleEl = ensureStyleEl();
 
+    // Pin the model to LF. The shared Yjs text uses '\n'; if the model used
+    // CRLF, each newline would be 2 chars in the model but 1 in the doc, so
+    // character offsets — and therefore every remote cursor position — would
+    // drift by the number of lines above the caret.
+    this.model.setEOL(0);
+
     // Seed the model from the shared text (binding is authoritative).
     const initial = ytext.toString();
     if (model.getValue() !== initial) {
@@ -111,6 +118,9 @@ export class MonacoYjsBinding {
               });
           }, this);
         });
+        // Our own typing shifts where remote carets/selections fall, but the
+        // ytext observer skips local transactions (mux), so reposition them here.
+        this.rerenderCursors();
       }),
     );
 
@@ -245,42 +255,36 @@ export class MonacoYjsBinding {
         return;
 
       const color = s.user?.color ?? "#888888";
-      const name = (s.user?.name ?? "Anon").replace(/["\\]/g, "");
+      const name = (s.user?.name ?? "Anon").replace(/["\\\n]/g, "");
       const lo = Math.min(anchor.index, head.index);
       const hi = Math.max(anchor.index, head.index);
       const sp = this.model.getPositionAt(lo);
       const ep = this.model.getPositionAt(hi);
-      const headPos = this.model.getPositionAt(head.index);
+      // The caret sits at the head end of the selection (a pure cursor is a
+      // zero-width range). Attach the head marker to whichever edge the head is.
+      const headAtEnd = head.index >= anchor.index;
+      const headClass = `yRemoteHead-${clientId}`;
 
-      if (hi > lo) {
-        next.push({
-          range: {
-            startLineNumber: sp.lineNumber,
-            startColumn: sp.column,
-            endLineNumber: ep.lineNumber,
-            endColumn: ep.column,
-          },
-          options: { className: `yRemoteSelection-${clientId}` },
-        });
-      }
-      // Zero-width caret at the head, drawn via a ::before element.
       next.push({
         range: {
-          startLineNumber: headPos.lineNumber,
-          startColumn: headPos.column,
-          endLineNumber: headPos.lineNumber,
-          endColumn: headPos.column,
+          startLineNumber: sp.lineNumber,
+          startColumn: sp.column,
+          endLineNumber: ep.lineNumber,
+          endColumn: ep.column,
         },
         options: {
-          className: `yRemoteCaret-${clientId}`,
-          beforeContentClassName: `yRemoteCaret-${clientId}`,
-          hoverMessage: { value: name },
+          className: hi > lo ? `yRemoteSelection-${clientId}` : undefined,
+          afterContentClassName: headAtEnd ? headClass : undefined,
+          beforeContentClassName: headAtEnd ? undefined : headClass,
         },
       });
 
       rules.push(
-        `.yRemoteSelection-${clientId}{background-color:${color}40;}`,
-        `.yRemoteCaret-${clientId}{border-left:2px solid ${color};margin-left:-1px;}`,
+        `.yRemoteSelection-${clientId}{background-color:${color}33;}`,
+        `.yRemoteHead-${clientId}{position:absolute;height:100%;box-sizing:border-box;border-left:2px solid ${color};}`,
+        `.yRemoteHead-${clientId}::after{content:"${name}";position:absolute;left:-2px;top:0;transform:translateY(-100%);` +
+          `font-size:10px;line-height:1.4;padding:0 4px;border-radius:3px 3px 3px 0;` +
+          `background-color:${color};color:#fff;white-space:nowrap;pointer-events:none;z-index:10;}`,
       );
     });
 

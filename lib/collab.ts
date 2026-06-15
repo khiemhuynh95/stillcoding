@@ -141,6 +141,7 @@ export class SupabaseYjsProvider {
   readonly doc: Y.Doc;
   readonly awareness: Awareness;
   private channel: RealtimeChannel | null = null;
+  private heartbeat: ReturnType<typeof setInterval> | null = null;
   private _status: CollabStatus = "connecting";
   private statusListeners = new Set<(s: CollabStatus) => void>();
   private docUpdateHandler: (update: Uint8Array, origin: unknown) => void;
@@ -236,6 +237,16 @@ export class SupabaseYjsProvider {
 
     this.doc.on("update", this.docUpdateHandler);
     this.awareness.on("update", this.awarenessHandler);
+
+    // Heartbeat: re-publish our awareness state every 15s. y-protocols prunes a
+    // peer whose state hasn't been refreshed within ~30s (its outdated-timeout),
+    // so without this an idle collaborator's cursor would vanish even though
+    // they're still connected. Bumping the local clock re-broadcasts via the
+    // awareness handler and keeps everyone's lastUpdated fresh.
+    this.heartbeat = setInterval(() => {
+      const local = this.awareness.getLocalState();
+      if (local) this.awareness.setLocalState(local);
+    }, 15000);
   }
 
   private send(event: string, payload: Record<string, unknown>) {
@@ -259,6 +270,8 @@ export class SupabaseYjsProvider {
   }
 
   destroy() {
+    if (this.heartbeat) clearInterval(this.heartbeat);
+    this.heartbeat = null;
     this.doc.off("update", this.docUpdateHandler);
     this.awareness.off("update", this.awarenessHandler);
     // Tell peers we're gone, then tear down.
