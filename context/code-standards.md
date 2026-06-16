@@ -78,6 +78,17 @@
   silently skipped — never throw on it.
 - Practice snippets must always include a `python3` entry (the
   fallback language); other languages are optional.
+- Per-problem starter code for **catalog** problems lives in the DB
+  (`problems.starter_code` jsonb), seeded by a migration — not in app
+  code. Add more by extending the seed migration, keyed by `title_slug`;
+  `rowToDetail` maps it to `ProblemDetail.starterCode` and the coding
+  page prefers it over the generic scaffold. Verify each Python block
+  against a reference solution before seeding. Custom problems (C1–C3)
+  still carry their own `starterCode` in `lib/customProblems.ts`.
+- **Database (SQL) problems** seed under the `sql` key, not `python3` — a
+  schema-aware SQL stub (the in-browser runner is Python-only, so these
+  are editor scaffolds). Verify the reference query against sample data
+  with stdlib `sqlite3` before seeding the stub.
 
 ## File Organization
 
