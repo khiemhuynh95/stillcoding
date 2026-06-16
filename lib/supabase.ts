@@ -63,6 +63,7 @@ interface ProblemRow {
   detail_synced_at: string | null;
   display_title: string | null;
   display_content: string | null;
+  starter_code: Record<string, string> | null;
 }
 
 const SUMMARY_COLUMNS =
@@ -112,6 +113,7 @@ function rowToDetail(r: ProblemRow): ProblemDetail {
     titleSlug: r.title_slug,
     parsedStats: r.stats ?? null,
     source: r.source,
+    starterCode: r.starter_code ?? undefined,
   };
 }
 
