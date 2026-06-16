@@ -45,9 +45,11 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 
 - **Supabase (Postgres)**: the canonical problem catalog — `problems`
   (list fields + detail: content / stats(jsonb) / topic_tags /
-  solution + `detail_synced_at`), `tags`, and a `sync_runs` audit
-  table. RLS makes anon/auth **read-only**; only the service role
-  (Edge Function) writes.
+  solution + `detail_synced_at`, plus `starter_code` jsonb: hand-authored
+  per-problem starter code keyed by language, seeded by migration and
+  preserved across syncs), `tags`, and a `sync_runs` audit table. RLS
+  makes anon/auth **read-only**; only the service role (Edge Function)
+  writes.
 - **Live API (fallback)**: `https://leetcode-api-pied.vercel.app`
   (configurable). Read when Supabase env vars are unset, or the DB
   returns empty/errors — so local dev works keyless.

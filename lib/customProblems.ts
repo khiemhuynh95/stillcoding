@@ -63,14 +63,31 @@ Output: 0</pre>
         pass
 
 
-# Add and run your own test cases, then press Run.
+# Implement the method above, then press Run.
 import unittest
 
 
-class Tests(unittest.TestCase):
+class TestAddDigits(unittest.TestCase):
     def test_examples(self):
+        # Straight from the problem statement.
         self.assertEqual(Solution().addDigits(38), 2)
         self.assertEqual(Solution().addDigits(0), 0)
+
+    def test_single_digit_returns_itself(self):
+        # Anything already one digit is returned unchanged.
+        for n in range(10):
+            self.assertEqual(Solution().addDigits(n), n)
+
+    def test_multiples_of_nine(self):
+        # The digital root of any positive multiple of 9 is 9.
+        self.assertEqual(Solution().addDigits(9), 9)
+        self.assertEqual(Solution().addDigits(18), 9)
+        self.assertEqual(Solution().addDigits(99), 9)
+
+    def test_larger_values(self):
+        self.assertEqual(Solution().addDigits(10), 1)
+        self.assertEqual(Solution().addDigits(199), 1)        # 19 -> 10 -> 1
+        self.assertEqual(Solution().addDigits(123456789), 9)  # sum 45 -> 9
 
 
 if __name__ == "__main__":
@@ -117,14 +134,31 @@ Output: false</pre>
         pass
 
 
-# Add and run your own test cases, then press Run.
+# Implement the method above, then press Run.
 import unittest
 
 
-class Tests(unittest.TestCase):
+class TestBalancedBrackets(unittest.TestCase):
     def test_examples(self):
+        # Straight from the problem statement.
         self.assertTrue(Solution().isBalanced("{[()]}"))
         self.assertFalse(Solution().isBalanced("([)]"))
+
+    def test_simple_pairs(self):
+        self.assertTrue(Solution().isBalanced("()"))
+        self.assertTrue(Solution().isBalanced("[]"))
+        self.assertTrue(Solution().isBalanced("{}"))
+
+    def test_unbalanced(self):
+        self.assertFalse(Solution().isBalanced("("))    # opened, never closed
+        self.assertFalse(Solution().isBalanced(")"))    # closes nothing
+        self.assertFalse(Solution().isBalanced("(]"))   # closed by wrong type
+
+    def test_nested_and_sequential(self):
+        self.assertTrue(Solution().isBalanced("()[]{}"))
+        self.assertTrue(Solution().isBalanced("{[]()}"))
+        self.assertTrue(Solution().isBalanced("((()))"))
+        self.assertFalse(Solution().isBalanced("(()"))  # one left open
 
 
 if __name__ == "__main__":

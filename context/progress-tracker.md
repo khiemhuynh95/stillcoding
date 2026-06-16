@@ -37,6 +37,70 @@ Update this file after every meaningful implementation change.
 ## In Progress
 
 - Rewording batches of problem statements (ongoing content pass).
+- **Custom problem test scaffolds** — expanded the inline `python3`
+  `unittest` blocks for C1 (`add-digits-until-one`) and C2
+  (`balanced-brackets`) from a single `test_examples` into proper test
+  classes (`TestAddDigits` / `TestBalancedBrackets`) with the example
+  cases plus edge cases (single-digit/digital-root for C1; simple pairs,
+  unbalanced, nested/sequential for C2). C3 left as-is.
+- **Per-problem catalog starter code (DB-backed)** — catalog problems can
+  now carry a real `class Solution` signature + an inline `unittest` block
+  (≥3 tests: examples + edge cases) instead of the generic `solve()`
+  scaffold. **Stored in the DB, not in app code:** a new `starter_code`
+  jsonb column on `problems`, seeded by migration
+  `20260616000001_problem_starter_code.sql`. Read path:
+  `fetchProblemFromDb` → `rowToDetail` maps `starter_code` →
+  `ProblemDetail.starterCode` (lib/supabase.ts); the coding page already
+  prefers `detail.starterCode` over the generic template. The daily sync
+  only writes the columns it names, so it preserves `starter_code`.
+  Order-insensitive tests where the problem allows any output order
+  (group-anagrams, top-k, 3sum); helper classes/builders inline for
+  linked-list / tree / graph / design problems. Each block was verified
+  against a reference solution before seeding. **Scope:** the API exposes
+  no signatures, so these are hand-authored per slug for the curated
+  study-list universe (Blind 75 / NeetCode 150 / Grind 75 / Top 100 Liked
+  — ~200 unique slugs); problems without a seed keep the generic scaffold.
+  python3 only (the runnable language). `tsc --noEmit` passes.
+  **Coverage: the entire curated study-list universe — all 189 unique
+  slugs across Blind 75 / NeetCode 150 / Grind 75 / Top 100 Liked.** Two
+  seed migrations: `…0001` (Blind 75, 75 problems) adds the column;
+  `…0002_…_extra` (the remaining 114) seeds the rest. Every Python block
+  was verified against a reference solution (stub + reference + shared
+  tests, so the seeded tests are exactly the verified ones) and
+  compile-checked out of the generated SQL. Problems outside these lists
+  keep the generic scaffold. **Manual step:** apply both migrations
+  (`supabase db push` or SQL editor); without them (or keyless dev), these
+  problems fall back to the generic scaffold.
+  - **Beyond the curated lists** (`…0003_…_common`, 24): widely-known
+    catalog problems (e.g. remove-duplicates, roman-to-integer,
+    reverse-string, fibonacci-number, min-depth, path-sum) — same verified
+    Python pipeline. The full ~3,700-problem tail is NOT covered: the API
+    exposes no signatures to author/verify from.
+  - **SQL / database problems** (`…0004_…_sql`, 10): seeded under the
+    `sql` key (not python3) since they're solved in SQL — schema-aware
+    stubs, with the reference query verified against sample data via
+    stdlib `sqlite3`. e.g. combine-two-tables, second-highest-salary,
+    rank-scores, rising-temperature.
+- **Full catalog backfill (DB-direct, not a migration)** — ran a one-off
+  Python backfill (service-role key; script not retained) to populate
+  `starter_code` for every non-hand-authored problem from LeetCode's
+  official GraphQL `codeSnippets` + `metaData` + `content`.
+  **Python-only** (`from __future__ import annotations` + the official
+  `python3` signature with `pass` injected so it runs standalone), plus a
+  `unittest` block of the statement's **example** cases where the
+  signature is JSON-able (skips linked-list/tree/graph-node, design
+  classes, and void/in-place; those get the signature stub). Database
+  problems get the `sql` snippet. Results: **3,138 / 3,958** problems now
+  carry starter code (was 222 hand-authored); ~2,586 backfilled python3
+  **with example tests** + 96 SQL; **820** stay NULL (premium/locked — no
+  public snippets → generic scaffold); 0 failures. The 223 hand-authored
+  seeds are protected by slug and untouched. **Caveat:** these example
+  tests are statement-derived (authoritative inputs/outputs) but
+  unverified and can be over-strict for any-order/multiple-answer
+  problems (each block says so). **Not captured in a migration** — the
+  data lives only in the DB; reproduce by re-querying LeetCode's GraphQL
+  (`codeSnippets`/`metaData`/`content`) for rows whose `starter_code` is
+  null.
 - **Non-traditional problems** — added the first build & debug exercise
   ("Cloud Gaming — Membership & Billing", custom `C3`) and a new
   `beyond-leetcode` preset list to hold this style of problem (class
