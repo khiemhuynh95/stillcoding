@@ -248,6 +248,35 @@ Update this file after every meaningful implementation change.
     daily sync preserves `starter_code`. Keyless dev still falls back to the
     generic Java scaffold.
 
+- **JavaScript Run (client-side Web Worker)** — added a third runner.
+  `hooks/useRunJavaScript.ts` drives `public/js-worker.js`, a classic Web Worker
+  that executes the editor buffer **natively** (no WASM, no CDN, nothing leaves
+  the browser), redirecting `console.*` into stdout/stderr and surfacing uncaught
+  errors (with an `editor.js:line:col` frame via `//# sourceURL`). Fresh worker
+  per run = cancel/timeout is a `terminate()`; 15s cap kills infinite loops.
+  Same `OutputLine[]` interface as the other runners, so `OutputConsole` is
+  unchanged. `CodeEditor` now selects among three runners
+  (`isJava ? javaRunner : isJs ? jsRunner : pyRunner`) and the Run/Ctrl+Enter
+  gate is `python3 ‖ javascript ‖ java`. The JS starter template gained a
+  trailing `console.log` so a first Run prints output. `tsc --noEmit` + `npm run
+  build` pass; worker eval/capture verified (solved code, mixed console args,
+  runtime errors).
+  - **Per-problem JS starters+tests (whole catalog, applied)** — `javascript`
+    key on `problems.starter_code` for **3,032 / 3,033** python3 problems (only
+    `the-dining-philosophers` skipped — malformed python starter). Generated
+    **entirely from the python3 starters — no LeetCode needed**: JS is
+    dynamically typed like Python, so the function name + params come from the
+    python `class Solution`/design class and values transpile ~1:1 (no
+    marshalling). Each is a `var fn = function(...)` (or design constructor +
+    prototype methods) + an IIFE harness that runs the same example cases and
+    prints a unittest-style report to stderr (badge/coloring work unchanged).
+    **2,732 auto-tests + 300 stubs.** Validated locally with **Node** (no
+    Wandbox); green-path re-verified with reference solutions across tiers.
+    Applied **DB-direct** via service role (`scratch/apply_js.py`) — not a
+    migration, data lives only in the DB, reproduced by the gitignored
+    `scratch/gen_js.py`. Coverage beats Java (3,011) because JS needs no
+    LeetCode signature, so premium problems synthesize from python too.
+
 ## Next Up
 
 - Continue roadmap / practice topic coverage.
