@@ -11,6 +11,8 @@ import {
 } from "@/lib/monacoYjsBinding";
 import type { SaveStatus } from "@/hooks/useCodeDraft";
 import { useRunPython } from "@/hooks/useRunPython";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { storageKeys } from "@/lib/storage";
 import { LanguageSelect } from "./LanguageSelect";
 import { EditorStatusBar } from "./EditorStatusBar";
 import { OutputConsole } from "./OutputConsole";
@@ -36,7 +38,18 @@ interface EditorInstance extends BindableEditor {
     cb: (e: { position: { lineNumber: number; column: number } }) => void,
   ): void;
   getValue(): string;
+  addCommand(keybinding: number, handler: () => void): void;
 }
+
+/** Minimal shape of the `monaco` namespace passed to onMount (keybinding enums). */
+interface MonacoNamespace {
+  KeyMod: { CtrlCmd: number };
+  KeyCode: { Enter: number };
+}
+
+const FONT_MIN = 11;
+const FONT_MAX = 22;
+const FONT_DEFAULT = 14;
 
 // Syntax themes per DESIGN.md: desaturated Google hues for long-session comfort
 // (keywords blue, strings green, numbers/constants red, comments grey).
@@ -159,7 +172,16 @@ export function CodeEditor({
   } = useRunPython();
   const [consoleOpen, setConsoleOpen] = useState(false);
 
+  // Editor view preferences, persisted across problems (localStorage).
+  const [fontSize, setFontSize] = useLocalStorage(
+    storageKeys.editorFontSize,
+    FONT_DEFAULT,
+  );
+  const adjustFont = (delta: number) =>
+    setFontSize((f) => Math.min(FONT_MAX, Math.max(FONT_MIN, f + delta)));
+
   const handleRun = () => {
+    if (!isPython) return;
     setConsoleOpen(true);
     // In collab mode the live buffer lives in the bound model, not `code`.
     const source = collabActive ? (editorRef.current?.getValue() ?? code) : code;
@@ -167,12 +189,20 @@ export function CodeEditor({
     setTimeout(() => run(source), 0);
   };
 
-  const handleMount = (editor: EditorInstance) => {
+  // Keep the latest handleRun reachable from the (once-registered) Monaco command.
+  const handleRunRef = useRef(handleRun);
+  handleRunRef.current = handleRun;
+
+  const handleMount = (editor: EditorInstance, monaco: MonacoNamespace) => {
     editorRef.current = editor;
     setEditorMounted(true);
     editor.onDidChangeCursorPosition((e) => {
       setPos({ line: e.position.lineNumber, column: e.position.column });
     });
+    // Ctrl/Cmd+Enter runs the current buffer (no-op for non-Python languages).
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () =>
+      handleRunRef.current(),
+    );
   };
 
   return (
@@ -185,6 +215,34 @@ export function CodeEditor({
           disabled={collabActive}
         />
         <div className="flex items-center gap-3">
+          {/* View controls: font size (persisted). */}
+          <div className="hidden sm:flex items-center gap-1 text-outline">
+            <button
+              type="button"
+              onClick={() => adjustFont(-1)}
+              disabled={fontSize <= FONT_MIN}
+              title="Decrease font size"
+              className="flex items-center hover:text-on-surface transition-colors disabled:opacity-40 disabled:hover:text-outline"
+            >
+              <span className="material-symbols-outlined text-[18px]">text_decrease</span>
+            </button>
+            <span
+              className="w-5 text-center text-label-md font-label-md tabular-nums"
+              title="Editor font size"
+            >
+              {fontSize}
+            </span>
+            <button
+              type="button"
+              onClick={() => adjustFont(1)}
+              disabled={fontSize >= FONT_MAX}
+              title="Increase font size"
+              className="flex items-center hover:text-on-surface transition-colors disabled:opacity-40 disabled:hover:text-outline"
+            >
+              <span className="material-symbols-outlined text-[18px]">text_increase</span>
+            </button>
+          </div>
+          <span className="hidden sm:block h-4 w-px bg-outline-variant" />
           {isBusy ? (
             <button
               type="button"
@@ -202,7 +260,7 @@ export function CodeEditor({
               disabled={!isPython}
               title={
                 isPython
-                  ? "Run code (Python, in your browser)"
+                  ? "Run code (Python, in your browser) — Ctrl/Cmd+Enter"
                   : "In-browser run supports Python only"
               }
               className="flex items-center gap-1 text-primary hover:opacity-80 transition-opacity text-label-md font-label-md disabled:opacity-40 disabled:hover:opacity-40"
@@ -241,7 +299,7 @@ export function CodeEditor({
           onMount={handleMount}
           options={{
             minimap: { enabled: false },
-            fontSize: 14,
+            fontSize,
             fontFamily: "JetBrains Mono, monospace",
             lineNumbers: "on",
             scrollBeyondLastLine: false,

@@ -151,6 +151,21 @@ Update this file after every meaningful implementation change.
     `overflow-hidden` — only the "Finished" header showed, output invisible.
     Added `min-h-0` to the section so the editor shrinks and the console
     body stays on screen.
+- **Editor view controls + Run shortcut + pass/fail badge** — coding-screen
+  polish on top of the existing Monaco editor + Pyodide runner:
+  - **Font size controls** in the editor header (font − / size / font +),
+    hidden on mobile (`sm:` and up). Persists across problems in localStorage
+    (`editorFontSize` 11–22) and feeds Monaco's `options` (live-applied by
+    `@monaco-editor/react`).
+  - **Ctrl/Cmd+Enter runs the buffer** — registered via `editor.addCommand`
+    in `onMount` (latest handler reached through a ref); no-op for
+    non-Python languages. Run tooltip mentions the shortcut.
+  - **Pass/fail badge** on the OutputConsole header — `parseTestSummary`
+    (exported from `useRunPython.ts`) reads unittest's `Ran N tests` +
+    `OK`/`FAILED (failures=..,errors=..)` lines into `{total, passed,
+    failed}`; the console shows a green "N/N passed" / red badge once a run
+    finishes. Returns null for non-unittest output (plain prints). No worker
+    change (no `?v=` bump needed). `tsc --noEmit` passes.
 
 ## Next Up
 
