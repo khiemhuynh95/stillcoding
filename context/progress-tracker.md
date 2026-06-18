@@ -36,6 +36,16 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
+- **Test output polish** — `unittest` writes its whole report to stderr,
+  so the console used to paint passing runs entirely red. The worker also
+  delivers stderr as one batched blob, so `useRunPython` now splits it
+  into per-line `OutputLine`s (`appendChunk`) and `lineTone()` classifies
+  each (muted framing/progress/`Ran N`, green `OK`, red only for
+  `FAILED`/`FAIL:`/`ERROR:`/tracebacks); `OutputConsole` styles per line.
+- **Error line jump** — `parseErrorLine()` pulls the deepest user frame
+  (`File "<editor>", line N`) from a traceback; the console shows a
+  clickable "Line N" chip that calls `onGotoLine` → Monaco
+  `revealLineInCenter`/`setPosition`/`focus` in `CodeEditor`.
 - Rewording batches of problem statements (ongoing content pass).
 - **Custom problem test scaffolds** — expanded the inline `python3`
   `unittest` blocks for C1 (`add-digits-until-one`) and C2
