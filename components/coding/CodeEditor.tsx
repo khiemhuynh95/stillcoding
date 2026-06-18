@@ -11,6 +11,7 @@ import {
 } from "@/lib/monacoYjsBinding";
 import type { SaveStatus } from "@/hooks/useCodeDraft";
 import { useRunPython } from "@/hooks/useRunPython";
+import { useRunJava } from "@/hooks/useRunJava";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { storageKeys } from "@/lib/storage";
 import { LanguageSelect } from "./LanguageSelect";
@@ -162,9 +163,14 @@ export function CodeEditor({
     return () => binding.destroy();
   }, [collab?.ytext, collab?.awareness, editorMounted]);
 
-  // In-browser execution is Python-only (Pyodide). Other languages stay
-  // editor-only until a server-side runner exists.
+  // Two runners: Python runs client-side (Pyodide/WASM); Java is compiled +
+  // run server-side via the public Wandbox API. Both expose the same interface,
+  // so we pick one by language. Other languages stay editor-only.
   const isPython = langId === "python3";
+  const isJava = langId === "java";
+  const isRunnable = isPython || isJava;
+  const pyRunner = useRunPython();
+  const javaRunner = useRunJava();
   const {
     status: runStatus,
     output,
@@ -172,7 +178,7 @@ export function CodeEditor({
     run,
     cancel,
     clear,
-  } = useRunPython();
+  } = isJava ? javaRunner : pyRunner;
   const [consoleOpen, setConsoleOpen] = useState(false);
 
   // Editor view preferences, persisted across problems (localStorage).
@@ -184,7 +190,7 @@ export function CodeEditor({
     setFontSize((f) => Math.min(FONT_MAX, Math.max(FONT_MIN, f + delta)));
 
   const handleRun = () => {
-    if (!isPython) return;
+    if (!isRunnable) return;
     setConsoleOpen(true);
     // In collab mode the live buffer lives in the bound model, not `code`.
     const source = collabActive
@@ -213,7 +219,7 @@ export function CodeEditor({
     editor.onDidChangeCursorPosition((e) => {
       setPos({ line: e.position.lineNumber, column: e.position.column });
     });
-    // Ctrl/Cmd+Enter runs the current buffer (no-op for non-Python languages).
+    // Ctrl/Cmd+Enter runs the current buffer (no-op for non-runnable languages).
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () =>
       handleRunRef.current(),
     );
@@ -277,11 +283,13 @@ export function CodeEditor({
             <button
               type="button"
               onClick={handleRun}
-              disabled={!isPython}
+              disabled={!isRunnable}
               title={
                 isPython
                   ? "Run code (Python, in your browser) — Ctrl/Cmd+Enter"
-                  : "In-browser run supports Python only"
+                  : isJava
+                    ? "Run code (Java, via Wandbox) — Ctrl/Cmd+Enter"
+                    : "Run supports Python and Java only"
               }
               className="flex items-center gap-1 text-primary hover:opacity-80 transition-opacity text-label-md font-label-md disabled:opacity-40 disabled:hover:opacity-40"
             >
