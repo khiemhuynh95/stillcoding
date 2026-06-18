@@ -260,9 +260,22 @@ Update this file after every meaningful implementation change.
   gate is `python3 ‖ javascript ‖ java`. The JS starter template gained a
   trailing `console.log` so a first Run prints output. `tsc --noEmit` + `npm run
   build` pass; worker eval/capture verified (solved code, mixed console args,
-  runtime errors). **Per-problem JS starters+tests are not yet generated** —
-  that's a future backfill; JS's dynamic typing makes it the cheapest transpile
-  from the existing python3 example cases (no type marshalling).
+  runtime errors).
+  - **Per-problem JS starters+tests (whole catalog, applied)** — `javascript`
+    key on `problems.starter_code` for **3,032 / 3,033** python3 problems (only
+    `the-dining-philosophers` skipped — malformed python starter). Generated
+    **entirely from the python3 starters — no LeetCode needed**: JS is
+    dynamically typed like Python, so the function name + params come from the
+    python `class Solution`/design class and values transpile ~1:1 (no
+    marshalling). Each is a `var fn = function(...)` (or design constructor +
+    prototype methods) + an IIFE harness that runs the same example cases and
+    prints a unittest-style report to stderr (badge/coloring work unchanged).
+    **2,732 auto-tests + 300 stubs.** Validated locally with **Node** (no
+    Wandbox); green-path re-verified with reference solutions across tiers.
+    Applied **DB-direct** via service role (`scratch/apply_js.py`) — not a
+    migration, data lives only in the DB, reproduced by the gitignored
+    `scratch/gen_js.py`. Coverage beats Java (3,011) because JS needs no
+    LeetCode signature, so premium problems synthesize from python too.
 
 ## Next Up
 
