@@ -248,6 +248,22 @@ Update this file after every meaningful implementation change.
     daily sync preserves `starter_code`. Keyless dev still falls back to the
     generic Java scaffold.
 
+- **JavaScript Run (client-side Web Worker)** — added a third runner.
+  `hooks/useRunJavaScript.ts` drives `public/js-worker.js`, a classic Web Worker
+  that executes the editor buffer **natively** (no WASM, no CDN, nothing leaves
+  the browser), redirecting `console.*` into stdout/stderr and surfacing uncaught
+  errors (with an `editor.js:line:col` frame via `//# sourceURL`). Fresh worker
+  per run = cancel/timeout is a `terminate()`; 15s cap kills infinite loops.
+  Same `OutputLine[]` interface as the other runners, so `OutputConsole` is
+  unchanged. `CodeEditor` now selects among three runners
+  (`isJava ? javaRunner : isJs ? jsRunner : pyRunner`) and the Run/Ctrl+Enter
+  gate is `python3 ‖ javascript ‖ java`. The JS starter template gained a
+  trailing `console.log` so a first Run prints output. `tsc --noEmit` + `npm run
+  build` pass; worker eval/capture verified (solved code, mixed console args,
+  runtime errors). **Per-problem JS starters+tests are not yet generated** —
+  that's a future backfill; JS's dynamic typing makes it the cheapest transpile
+  from the existing python3 example cases (no type marshalling).
+
 ## Next Up
 
 - Continue roadmap / practice topic coverage.

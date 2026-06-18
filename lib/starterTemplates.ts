@@ -39,6 +39,10 @@ const TEMPLATES: Record<string, string> = {
 var solve = function (input) {
   // Write your solution here
 };
+
+// Run your code here, e.g.:
+// console.log(solve(...));
+console.log("Hello, JavaScript!");
 `,
   typescript: `function solve(input: unknown): unknown {
   // Write your solution here

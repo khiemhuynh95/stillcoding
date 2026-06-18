@@ -12,6 +12,7 @@ import {
 import type { SaveStatus } from "@/hooks/useCodeDraft";
 import { useRunPython } from "@/hooks/useRunPython";
 import { useRunJava } from "@/hooks/useRunJava";
+import { useRunJavaScript } from "@/hooks/useRunJavaScript";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { storageKeys } from "@/lib/storage";
 import { LanguageSelect } from "./LanguageSelect";
@@ -163,14 +164,17 @@ export function CodeEditor({
     return () => binding.destroy();
   }, [collab?.ytext, collab?.awareness, editorMounted]);
 
-  // Two runners: Python runs client-side (Pyodide/WASM); Java is compiled +
-  // run server-side via the public Wandbox API. Both expose the same interface,
-  // so we pick one by language. Other languages stay editor-only.
+  // Three runners, all sharing one interface so we pick by language: Python runs
+  // client-side (Pyodide/WASM), JavaScript runs client-side natively in a Web
+  // Worker, and Java is compiled + run server-side via the public Wandbox API.
+  // Other languages stay editor-only.
   const isPython = langId === "python3";
   const isJava = langId === "java";
-  const isRunnable = isPython || isJava;
+  const isJs = langId === "javascript";
+  const isRunnable = isPython || isJava || isJs;
   const pyRunner = useRunPython();
   const javaRunner = useRunJava();
+  const jsRunner = useRunJavaScript();
   const {
     status: runStatus,
     output,
@@ -178,7 +182,7 @@ export function CodeEditor({
     run,
     cancel,
     clear,
-  } = isJava ? javaRunner : pyRunner;
+  } = isJava ? javaRunner : isJs ? jsRunner : pyRunner;
   const [consoleOpen, setConsoleOpen] = useState(false);
 
   // Editor view preferences, persisted across problems (localStorage).
@@ -287,9 +291,11 @@ export function CodeEditor({
               title={
                 isPython
                   ? "Run code (Python, in your browser) — Ctrl/Cmd+Enter"
-                  : isJava
-                    ? "Run code (Java, via Wandbox) — Ctrl/Cmd+Enter"
-                    : "Run supports Python and Java only"
+                  : isJs
+                    ? "Run code (JavaScript, in your browser) — Ctrl/Cmd+Enter"
+                    : isJava
+                      ? "Run code (Java, via Wandbox) — Ctrl/Cmd+Enter"
+                      : "Run supports Python, JavaScript, and Java"
               }
               className="flex items-center gap-1 text-primary hover:opacity-80 transition-opacity text-label-md font-label-md disabled:opacity-40 disabled:hover:opacity-40"
             >

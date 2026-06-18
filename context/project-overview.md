@@ -122,8 +122,9 @@ review) layered on top of raw LeetCode data.
 ### Out of Scope
 
 - Submission / judging (no grader). Run-only code execution exists for
-  Python (in-browser Pyodide) and Java (server-side via the public
-  Wandbox API); the other languages remain editor-only.
+  Python (in-browser Pyodide), JavaScript (in-browser Web Worker), and
+  Java (server-side via the public Wandbox API); the other languages
+  remain editor-only.
 - Per-problem real function signatures / starter templates from the
   API (it exposes none — generic scaffolds are used).
 - User accounts / auth / cross-device sync of user state (drafts,
