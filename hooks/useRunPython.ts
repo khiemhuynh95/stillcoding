@@ -14,6 +14,32 @@ export interface OutputLine {
   text: string;
 }
 
+export interface TestSummary {
+  total: number;
+  passed: number;
+  failed: number;
+}
+
+/**
+ * Parses Python `unittest` output into a pass/fail summary. unittest prints a
+ * `Ran N tests` line followed by `OK` or `FAILED (failures=.., errors=..)`.
+ * Returns null when the output isn't a unittest run (e.g. plain prints).
+ */
+export function parseTestSummary(output: OutputLine[]): TestSummary | null {
+  const text = output.map((l) => l.text).join("\n");
+  const ran = text.match(/Ran (\d+) tests?\b/);
+  if (!ran) return null;
+  const total = Number(ran[1]);
+  const failedBlock = text.match(/^FAILED\s*\(([^)]*)\)/m);
+  let failed = 0;
+  if (failedBlock) {
+    const failures = failedBlock[1].match(/failures=(\d+)/);
+    const errors = failedBlock[1].match(/errors=(\d+)/);
+    failed = (failures ? Number(failures[1]) : 0) + (errors ? Number(errors[1]) : 0);
+  }
+  return { total, passed: Math.max(0, total - failed), failed };
+}
+
 /** Max wall time for *execution* (after the runtime has loaded). */
 const RUN_TIMEOUT_MS = 15_000;
 

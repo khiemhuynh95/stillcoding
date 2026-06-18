@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import type { OutputLine, RunStatus } from "@/hooks/useRunPython";
+import { useEffect, useMemo, useRef } from "react";
+import {
+  parseTestSummary,
+  type OutputLine,
+  type RunStatus,
+} from "@/hooks/useRunPython";
 import { cn } from "@/lib/utils";
 
 const STATUS_LABEL: Record<RunStatus, string> = {
@@ -27,6 +31,12 @@ export function OutputConsole({
 
   const busy = status === "loading-runtime" || status === "running";
 
+  // Surface a pass/fail badge once a unittest run finishes.
+  const summary = useMemo(
+    () => (busy ? null : parseTestSummary(output)),
+    [busy, output],
+  );
+
   // While output is still streaming, follow the bottom. Once the run finishes
   // (Pyodide delivers stdout/stderr in one batch), jump to the top so the first
   // line — e.g. the first failing test / traceback — is visible without having
@@ -48,6 +58,21 @@ export function OutputConsole({
           )}
           {STATUS_LABEL[status]}
         </span>
+        {summary && (
+          <span
+            className={cn(
+              "ml-3 flex items-center gap-1 rounded-full px-2 py-0.5 text-label-sm font-label-md",
+              summary.failed === 0
+                ? "bg-[#188038]/12 text-[#188038] dark:bg-[#81c995]/15 dark:text-[#81c995]"
+                : "bg-error/12 text-error",
+            )}
+          >
+            <span className="material-symbols-outlined text-[14px]">
+              {summary.failed === 0 ? "check_circle" : "cancel"}
+            </span>
+            {summary.passed}/{summary.total} passed
+          </span>
+        )}
         <div className="ml-auto flex items-center gap-3">
           <button
             type="button"

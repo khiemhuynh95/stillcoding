@@ -42,6 +42,7 @@ export const storageKeys = {
   noiseVolume: "noiseVolume",
   noiseTone: "noiseTone",
   collabIdentity: "collabIdentity",
+  editorFontSize: "editorFontSize",
   collabLast: (slug: string) => `collabLast:${slug}`,
   draft: (slug: string, lang: string) => `draft:${slug}:${lang}`,
 } as const;
