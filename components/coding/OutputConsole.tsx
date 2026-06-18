@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import {
+  lineTone,
+  parseErrorLine,
   parseTestSummary,
   type OutputLine,
   type RunStatus,
@@ -21,11 +23,14 @@ export function OutputConsole({
   output,
   onClear,
   onClose,
+  onGotoLine,
 }: {
   status: RunStatus;
   output: OutputLine[];
   onClear: () => void;
   onClose: () => void;
+  /** Jump the editor to a 1-based line (used by the error-location chip). */
+  onGotoLine?: (line: number) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -35,6 +40,13 @@ export function OutputConsole({
   const summary = useMemo(
     () => (busy ? null : parseTestSummary(output)),
     [busy, output],
+  );
+
+  // On error, pull the failing line out of the traceback so we can offer a
+  // one-click jump to it in the editor.
+  const errorLine = useMemo(
+    () => (status === "error" ? parseErrorLine(output) : null),
+    [status, output],
   );
 
   // While output is still streaming, follow the bottom. Once the run finishes
@@ -73,6 +85,27 @@ export function OutputConsole({
             {summary.passed}/{summary.total} passed
           </span>
         )}
+        {errorLine != null &&
+          (onGotoLine ? (
+            <button
+              type="button"
+              onClick={() => onGotoLine(errorLine)}
+              title={`Jump to line ${errorLine} in the editor`}
+              className="ml-3 flex items-center gap-1 rounded-full px-2 py-0.5 text-label-sm font-label-md bg-error/12 text-error hover:bg-error/20 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[14px]">
+                error
+              </span>
+              Line {errorLine}
+            </button>
+          ) : (
+            <span className="ml-3 flex items-center gap-1 rounded-full px-2 py-0.5 text-label-sm font-label-md bg-error/12 text-error">
+              <span className="material-symbols-outlined text-[14px]">
+                error
+              </span>
+              Line {errorLine}
+            </span>
+          ))}
         <div className="ml-auto flex items-center gap-3">
           <button
             type="button"
@@ -108,19 +141,25 @@ export function OutputConsole({
                   : "Run your code to see output here."}
           </span>
         ) : (
-          output.map((line, i) => (
-            <div
-              key={i}
-              className={cn(
-                line.stream === "stderr" && "text-error",
-                line.stream === "system" && "text-on-surface-variant italic",
-              )}
-            >
-              {/* Pyodide's batched callback strips the trailing newline, so each
+          output.map((line, i) => {
+            const tone = lineTone(line);
+            return (
+              <div
+                key={i}
+                className={cn(
+                  tone === "error" && "text-error",
+                  tone === "muted" && "text-on-surface-variant",
+                  tone === "success" &&
+                    "font-medium text-[#188038] dark:text-[#81c995]",
+                  line.stream === "system" && "italic",
+                )}
+              >
+                {/* Pyodide's batched callback strips the trailing newline, so each
                   chunk is one line; render blank chunks as a real blank line. */}
-              {line.text === "" ? " " : line.text}
-            </div>
-          ))
+                {line.text === "" ? " " : line.text}
+              </div>
+            );
+          })
         )}
       </div>
     </div>

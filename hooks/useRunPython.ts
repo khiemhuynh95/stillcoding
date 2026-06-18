@@ -35,9 +35,54 @@ export function parseTestSummary(output: OutputLine[]): TestSummary | null {
   if (failedBlock) {
     const failures = failedBlock[1].match(/failures=(\d+)/);
     const errors = failedBlock[1].match(/errors=(\d+)/);
-    failed = (failures ? Number(failures[1]) : 0) + (errors ? Number(errors[1]) : 0);
+    failed =
+      (failures ? Number(failures[1]) : 0) + (errors ? Number(errors[1]) : 0);
   }
   return { total, passed: Math.max(0, total - failed), failed };
+}
+
+/**
+ * Finds the line number to jump to on error: the deepest traceback frame that
+ * points at the user's code. The worker compiles the editor buffer with the
+ * filename `<editor>`, so frames reading `File "<editor>", line N` are the
+ * user's own lines (vs. unittest/stdlib internals). The last such frame is
+ * where the failure actually surfaced. Returns null when there's no traceback.
+ */
+export function parseErrorLine(output: OutputLine[]): number | null {
+  let line: number | null = null;
+  for (const l of output) {
+    if (l.stream !== "stderr") continue;
+    const m = l.text.match(/File "<editor>", line (\d+)/);
+    if (m) line = Number(m[1]);
+  }
+  return line;
+}
+
+export type LineTone = "normal" | "muted" | "success" | "error";
+
+/**
+ * Picks a display tone for a single output line. `unittest` writes its *whole*
+ * report to stderr — progress dots, separators, the `Ran N tests` line and
+ * `OK`/`FAILED` — so painting every stderr line red makes a clean pass look
+ * like a crash. We mute the framing, green the `OK`, and reserve red for the
+ * lines that actually signal a failure (tracebacks, `FAIL:`/`ERROR:` blocks).
+ */
+export function lineTone(line: OutputLine): LineTone {
+  if (line.stream === "stdout") return "normal";
+  if (line.stream === "system") return "muted";
+
+  const t = line.text.trim();
+  if (t === "") return "muted";
+  if (/^[-=]+$/.test(t)) return "muted"; // section separators
+  if (/^[.FEsx]+$/.test(t)) return "muted"; // non-verbose progress chars
+  if (/^Ran \d+ tests?\b/.test(t)) return "muted";
+  if (/^OK\b/.test(t)) return "success"; // "OK" / "OK (skipped=2)"
+  if (/^FAILED\b/.test(t)) return "error";
+  if (/^(FAIL|ERROR):/.test(t)) return "error";
+  if (/\.\.\. ok$/i.test(t)) return "muted"; // verbose: "test_x (...) ... ok"
+  if (/\.\.\. skipped/i.test(t)) return "muted";
+  if (/\.\.\. (FAIL|ERROR)\b/i.test(t)) return "error";
+  return "error"; // tracebacks & genuine runtime errors
 }
 
 /** Max wall time for *execution* (after the runtime has loaded). */
@@ -77,6 +122,18 @@ export function useRunPython() {
   useEffect(() => () => terminate(), [terminate]);
 
   const append = (line: OutputLine) => setOutput((prev) => [...prev, line]);
+
+  // Pyodide hands us stdout/stderr as one batched blob with embedded newlines.
+  // Split it into one OutputLine per line so each can be tone-classified
+  // (unittest's report — dots, separators, OK/FAILED — all arrives via stderr).
+  const appendChunk = (stream: "stdout" | "stderr", text: string) =>
+    setOutput((prev) => [
+      ...prev,
+      ...text
+        .replace(/\n$/, "")
+        .split("\n")
+        .map((t) => ({ stream, text: t })),
+    ]);
 
   const cancel = useCallback(() => {
     terminate();
@@ -131,13 +188,13 @@ export function useRunPython() {
             }
             break;
           case "stdout":
-            append({ stream: "stdout", text: msg.text ?? "" });
+            appendChunk("stdout", msg.text ?? "");
             break;
           case "stderr":
-            append({ stream: "stderr", text: msg.text ?? "" });
+            appendChunk("stderr", msg.text ?? "");
             break;
           case "error":
-            append({ stream: "stderr", text: msg.text ?? "" });
+            appendChunk("stderr", msg.text ?? "");
             setStatus("error");
             break;
           case "done":
@@ -148,7 +205,9 @@ export function useRunPython() {
       };
 
       worker.onerror = (e) => {
-        const where = e.filename ? ` (${e.filename}:${e.lineno}:${e.colno})` : "";
+        const where = e.filename
+          ? ` (${e.filename}:${e.lineno}:${e.colno})`
+          : "";
         append({
           stream: "stderr",
           text: (e.message || "Worker failed to start") + where,

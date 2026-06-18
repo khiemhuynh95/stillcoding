@@ -39,6 +39,9 @@ interface EditorInstance extends BindableEditor {
   ): void;
   getValue(): string;
   addCommand(keybinding: number, handler: () => void): void;
+  revealLineInCenter(lineNumber: number): void;
+  setPosition(position: { lineNumber: number; column: number }): void;
+  focus(): void;
 }
 
 /** Minimal shape of the `monaco` namespace passed to onMount (keybinding enums). */
@@ -184,7 +187,9 @@ export function CodeEditor({
     if (!isPython) return;
     setConsoleOpen(true);
     // In collab mode the live buffer lives in the bound model, not `code`.
-    const source = collabActive ? (editorRef.current?.getValue() ?? code) : code;
+    const source = collabActive
+      ? (editorRef.current?.getValue() ?? code)
+      : code;
     // Defer so the console renders even if run() somehow throws synchronously.
     setTimeout(() => run(source), 0);
   };
@@ -192,6 +197,15 @@ export function CodeEditor({
   // Keep the latest handleRun reachable from the (once-registered) Monaco command.
   const handleRunRef = useRef(handleRun);
   handleRunRef.current = handleRun;
+
+  // Jump the editor to (and focus) a line — used by the console's error chip.
+  const gotoLine = (line: number) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.revealLineInCenter(line);
+    editor.setPosition({ lineNumber: line, column: 1 });
+    editor.focus();
+  };
 
   const handleMount = (editor: EditorInstance, monaco: MonacoNamespace) => {
     editorRef.current = editor;
@@ -224,7 +238,9 @@ export function CodeEditor({
               title="Decrease font size"
               className="flex items-center hover:text-on-surface transition-colors disabled:opacity-40 disabled:hover:text-outline"
             >
-              <span className="material-symbols-outlined text-[18px]">text_decrease</span>
+              <span className="material-symbols-outlined text-[18px]">
+                text_decrease
+              </span>
             </button>
             <span
               className="w-5 text-center text-label-md font-label-md tabular-nums"
@@ -239,7 +255,9 @@ export function CodeEditor({
               title="Increase font size"
               className="flex items-center hover:text-on-surface transition-colors disabled:opacity-40 disabled:hover:text-outline"
             >
-              <span className="material-symbols-outlined text-[18px]">text_increase</span>
+              <span className="material-symbols-outlined text-[18px]">
+                text_increase
+              </span>
             </button>
           </div>
           <span className="hidden sm:block h-4 w-px bg-outline-variant" />
@@ -250,7 +268,9 @@ export function CodeEditor({
               title="Stop execution"
               className="flex items-center gap-1 text-error hover:opacity-80 transition-opacity text-label-md font-label-md"
             >
-              <span className="material-symbols-outlined text-[18px]">stop_circle</span>
+              <span className="material-symbols-outlined text-[18px]">
+                stop_circle
+              </span>
               <span className="hidden sm:inline">Stop</span>
             </button>
           ) : (
@@ -265,7 +285,9 @@ export function CodeEditor({
               }
               className="flex items-center gap-1 text-primary hover:opacity-80 transition-opacity text-label-md font-label-md disabled:opacity-40 disabled:hover:opacity-40"
             >
-              <span className="material-symbols-outlined text-[18px]">play_arrow</span>
+              <span className="material-symbols-outlined text-[18px]">
+                play_arrow
+              </span>
               <span className="hidden sm:inline">Run</span>
             </button>
           )}
@@ -320,6 +342,7 @@ export function CodeEditor({
           output={output}
           onClear={clear}
           onClose={() => setConsoleOpen(false)}
+          onGotoLine={gotoLine}
         />
       )}
 
