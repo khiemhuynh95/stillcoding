@@ -188,6 +188,65 @@ Update this file after every meaningful implementation change.
     failed}`; the console shows a green "N/N passed" / red badge once a run
     finishes. Returns null for non-unittest output (plain prints). No worker
     change (no `?v=` bump needed). `tsc --noEmit` passes.
+- **Java Run (server-side, Wandbox)** — added a second runner so Java is now
+  runnable alongside Python. `hooks/useRunJava.ts` POSTs the buffer to the
+  public **Wandbox** API (`compile.json`), compiled + run server-side, and maps
+  `compiler_error`/`program_output`/`program_error` into the same `OutputLine[]`
+  the console already renders (so `OutputConsole` is unchanged — the
+  Python-specific `parseTestSummary`/`parseErrorLine` just return null for Java).
+  `CodeEditor` now calls **both** hooks and selects by language
+  (`isJava ? javaRunner : pyRunner`); the Run button/`Ctrl+Enter` gate widened
+  from `isPython` to `isRunnable` (python3 ‖ java). The Java starter template
+  gained a `main` so the first Run prints output. **No API key, no infra**, but
+  user code leaves the browser (the trade-off Python's in-browser Pyodide
+  avoided). Wandbox compiles a fixed `prog.java`, so the hook strips a top-level
+  `public` modifier (LeetCode-style `class Solution` is package-private and fine)
+  and resolves the newest `openjdk-jdk-*` from `list.json` once per session
+  (build suffix rots). **Why Wandbox not Piston:** the public emkc Piston
+  instance went whitelist-only on 2026-02-15. `tsc --noEmit` passes; verified the
+  endpoint against success/compile-error/runtime-exception cases. Other
+  languages (js/ts/cpp/go/sql) stay editor-only.
+
+- **Per-problem Java starter code (curated lists)** — Java is now runnable
+  *and* carries real per-problem starters with tests, matching the Python model.
+  A new `java` key on `problems.starter_code` holds, per curated study-list slug
+  (Blind 75 / NeetCode 150 / Grind 75 / Top 100 Liked — 189 unique), a real
+  `class Solution` Java signature (LeetCode `codeSnippets`) + a generated `Main`
+  harness that runs the **same example cases as the verified python3 starter**
+  and prints a **unittest-style report to stderr**, so the existing pass/fail
+  badge + console tone-coloring (useRunPython `parseTestSummary`/`lineTone`) work
+  for Java with **zero UI changes** (stub → red `FAILED`, solved → green `OK`).
+  - **How built:** a one-off transpiler (kept locally in `scratch/`,
+    gitignored — not retained in-repo, like the Python backfill) parses each
+    python3 starter's `assert*` cases with `ast` and maps the literal values
+    onto the Java param/return types. Handles: plain scalars/arrays/lists, char
+    grids, `_norm` (both-unordered) / `_set` (outer-unordered) / `set`/`sorted`/
+    `len` wrappers, linked-list `build`/`to_list`, tree `build_tree`/`serialize`,
+    `assertIsNone`, **design** op-sequences (min-stack, lru-cache), **in-place/
+    void** mutation (next-permutation, sort-colors), and **premium** problems
+    (no LeetCode snippet) via Java-signature **synthesis from the python type
+    hints**. Every harness is compile + run validated (curated: Wandbox; the
+    full tail: a **local Temurin JDK 21**, to avoid hammering Wandbox ~3k×);
+    green-path re-verified with reference solutions across all tiers.
+  - **Coverage (whole catalog — Phase 1 + 2 both applied):** **3,011 / 3,033**
+    python3 problems now carry a `java` starter; 22 keep the generic scaffold
+    (graph/random `Node` + a few exotic shapes). Breakdown: **curated lists**
+    (189) → 159 auto-tests + 27 stubs (3 generic); **full tail** (2,847) →
+    2,567 auto-tests + 280 stubs (22 generic). ~89% of generated entries carry
+    runnable tests; the rest are compile-checked signature stubs.
+  - **Caveat:** Java tests are transpiled from the python3 example cases (same
+    inputs/outputs), so they inherit the python verification — the curated 189
+    are hand-verified; the **tail is statement-derived/unverified** (the python
+    backfill's caveat) and can be over-strict on any-order problems.
+  - **Delivery:** the **curated** 189 ship as version-controlled migration
+    `20260618000001_problem_starter_code_java.sql` (jsonb `||` merge — adds
+    `java`, preserves `python3`/`sql`; applied). The **tail** was applied
+    **DB-direct** via the service role (`scratch/apply_tail.py`, read-merge-
+    write, idempotent) — **not** a migration (a ~2.8k-statement file would be
+    ~8 MB), mirroring how the python backfill tail was applied: the data lives
+    only in the DB, reproduced by re-running the (gitignored) transpiler. The
+    daily sync preserves `starter_code`. Keyless dev still falls back to the
+    generic Java scaffold.
 
 ## Next Up
 
@@ -196,10 +255,12 @@ Update this file after every meaningful implementation change.
 
 ## Open Questions
 
-- None blocking. Future extension points (not committed): multi-language
-  execution (server-side Judge0/Piston — Python already runs in-browser
-  via Pyodide), user accounts + cross-device sync, graduating custom
-  problems to Supabase.
+- None blocking. Future extension points (not committed): extending the Java
+  starter+test backfill beyond the curated lists to the full catalog tail
+  (Phase 2, same transpiler); more runnable languages (the Wandbox runner is
+  language-agnostic — js/ts/cpp/go are easy adds); user accounts + cross-device
+  sync; graduating custom problems to Supabase. (Python runs in-browser via
+  Pyodide; Java compiles + runs server-side via Wandbox.)
 
 ## Architecture Decisions
 

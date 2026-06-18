@@ -49,6 +49,12 @@ var solve = function (input) {
     public void solve() {
         // Write your solution here
     }
+
+    public static void main(String[] args) {
+        // Run your code here, e.g.:
+        // new Solution().solve();
+        System.out.println("Hello, Java!");
+    }
 }
 `,
   cpp: `class Solution {

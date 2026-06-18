@@ -33,3 +33,6 @@ next-env.d.ts
 
 # humanize loop scratch files
 scripts/_*.json
+
+# local generators / one-off backfill scratch (e.g. Java starter transpiler)
+/scratch/

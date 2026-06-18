@@ -102,8 +102,12 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
    `localStorage` directly.
 4. Problem HTML is **always** sanitized (`lib/sanitize.ts`) before
    render — never `dangerouslySetInnerHTML` raw API/DB content.
-5. The app has **no code execution** path; the editor saves drafts
-   only (no Run/Submit).
+5. Code execution is **Run-only, no judge** and limited to two
+   languages: Python runs client-side (Pyodide/WASM in a Web Worker),
+   Java is compiled + run server-side via the public Wandbox API
+   (`hooks/useRunJava.ts` — no key, user code leaves the browser). All
+   other languages stay editor-only (draft autosave). There is no
+   Submit/grader — Run just executes the editor buffer.
 6. Custom problems, lists, roadmap, and practice are curated in code
    and resolve through the normal data layer — a slug missing from
    the catalog is silently skipped, never an error.
