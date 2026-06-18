@@ -47,6 +47,10 @@ export interface ITextModel {
 interface ISelection {
   getStartPosition(): IPosition;
   getEndPosition(): IPosition;
+  /** The anchor end (where the selection was started from). */
+  getSelectionStart(): IPosition;
+  /** The active end — where the caret actually sits. */
+  getPosition(): IPosition;
 }
 export interface ICodeEditor {
   getModel(): ITextModel | null;
@@ -87,17 +91,19 @@ export class MonacoYjsBinding {
     this.doc = ytext.doc!;
     this.styleEl = ensureStyleEl();
 
-    // Pin the model to LF. The shared Yjs text uses '\n'; if the model used
-    // CRLF, each newline would be 2 chars in the model but 1 in the doc, so
-    // character offsets — and therefore every remote cursor position — would
-    // drift by the number of lines above the caret.
-    this.model.setEOL(0);
-
     // Seed the model from the shared text (binding is authoritative).
     const initial = ytext.toString();
     if (model.getValue() !== initial) {
       this.locked(() => model.setValue(initial));
     }
+
+    // Pin the model to LF *after* seeding. The shared Yjs text uses '\n'; if the
+    // model used CRLF, each newline would be 2 chars in the model but 1 in the
+    // doc, so character offsets — and therefore every remote cursor position —
+    // would drift by the number of lines above the caret. This must run after
+    // setValue(), which rebuilds the text buffer and resets the EOL back to the
+    // model's platform default (CRLF on Windows).
+    this.model.setEOL(0);
 
     // Yjs → Monaco: apply remote text deltas, preserving the local caret.
     this.ytextObserver = this.ytextObserver.bind(this);
@@ -131,8 +137,11 @@ export class MonacoYjsBinding {
       editor.onDidChangeCursorSelection(() => {
         const sel = editor.getSelection();
         if (!sel) return;
-        const anchor = model.getOffsetAt(sel.getStartPosition());
-        const head = model.getOffsetAt(sel.getEndPosition());
+        // Use the true anchor/active ends (not start/end, which normalize to
+        // top-left/bottom-right). Otherwise a selection dragged backward would
+        // broadcast its caret at the wrong edge of the highlight.
+        const anchor = model.getOffsetAt(sel.getSelectionStart());
+        const head = model.getOffsetAt(sel.getPosition());
         awareness.setLocalStateField("selection", {
           anchor: Y.createRelativePositionFromTypeIndex(ytext, anchor),
           head: Y.createRelativePositionFromTypeIndex(ytext, head),

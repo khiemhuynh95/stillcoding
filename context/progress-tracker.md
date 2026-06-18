@@ -120,6 +120,18 @@ Update this file after every meaningful implementation change.
   (collab mode bypasses localStorage autosave, locks language, hides
   Reset), and remote cursors/selections via injected per-client CSS.
   `npm run build` + `tsc --noEmit` pass.
+  - **Remote cursor position fixes (`monacoYjsBinding.ts`):** two bugs
+    made synced cursors land in the wrong place. (1) EOL ordering —
+    `setEOL(0)` ran *before* `setValue()`, but `setValue` rebuilds the
+    buffer and resets the EOL to the platform default (CRLF on Windows),
+    so the model went back to CRLF and every remote cursor drifted by the
+    line count above the caret. Now pinned to LF *after* seeding. (2)
+    Direction loss — local selections were broadcast using
+    `getStartPosition`/`getEndPosition` (normalized to top-left/
+    bottom-right), so a backward-dragged selection put its caret at the
+    wrong edge. Now uses `getSelectionStart()`/`getPosition()` (true
+    anchor/active ends); `rerenderCursors`'s `headAtEnd` already handles
+    direction once the data is correct.
   **Manual steps before it works in prod:** apply the new migration
   (`supabase db push` or SQL editor) and ensure Realtime is enabled on
   the project (Broadcast is on by default; no table replication
