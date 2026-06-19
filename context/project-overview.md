@@ -6,8 +6,8 @@ StillCoding is a Next.js (App Router) web app for browsing coding
 problems and writing solutions in the browser. It sources its
 problem catalog from the public, read-only
 [leetcode-api](https://github.com/noworneverev/leetcode-api)
-(persisted in Supabase, with a live-API fallback), and merges in a
-local, version-controlled set of custom problems. It's aimed at
+(persisted in Supabase, with a live-API fallback), plus its own custom
+problems stored in the same DB (`source='custom'`). It's aimed at
 developers practicing for interviews who want a fast, distraction-free
 place to read a problem and draft a solution — plus guided structure
 (a learning roadmap, curated problem lists, and per-topic syntax
@@ -86,9 +86,10 @@ review) layered on top of raw LeetCode data.
 
 ### Custom problems
 
-- Local, version-controlled problems appended to
-  `lib/customProblems.ts`, merged with the API behind one normalized
-  shape so the UI is source-agnostic.
+- Your own problems stored in the catalog DB as `source='custom'` rows
+  (added via a migration), read behind the same normalized shape as the
+  rest of the catalog so the UI is source-agnostic. (DB-only, so absent
+  in keyless dev.)
 
 ### Collaboration
 
@@ -122,7 +123,8 @@ review) layered on top of raw LeetCode data.
   user lists, theme — all in localStorage.
 - Supabase-persisted catalog with daily sync + live-API fallback.
 - Curated roadmap, preset/user lists, per-topic practice pages.
-- Custom problems via a version-controlled file.
+- Custom problems as `source='custom'` rows in the catalog DB (seeded
+  by migration).
 
 ### Out of Scope
 
@@ -145,6 +147,6 @@ review) layered on top of raw LeetCode data.
    user can browse, open a problem, and draft a solution.
 2. Filters, solved status, and code drafts survive a reload.
 3. `npm run build` passes.
-4. A new custom problem appended to `lib/customProblems.ts` appears
-   in the list, is searchable, and opens in the editor with no other
-   file changes.
+4. A new custom problem inserted as a `source='custom'` row (via a
+   migration) appears in the list, is searchable, and opens in the
+   editor with no app-code changes.

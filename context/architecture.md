@@ -31,9 +31,10 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 - `lib/` — the data layer and curated content. `leetcode.ts` is the
   single normalized data API; `supabase.ts` the DB client; `types.ts`
   the shared shapes; `storage.ts` the namespaced localStorage helpers;
-  `customProblems.ts`, `lists.ts`, `roadmap.ts`, `practice.ts`,
-  `starterTemplates.ts` the curated-in-code content; `sanitize.ts`,
-  `prefetch.ts`, `utils.ts` the support utilities.
+  `lists.ts`, `roadmap.ts`, `practice.ts`, `starterTemplates.ts` the
+  curated-in-code content; `sanitize.ts`, `prefetch.ts`, `utils.ts` the
+  support utilities. (Custom problems used to live in `customProblems.ts`;
+  they are now `source='custom'` rows in the DB.)
 - `providers/` — `QueryProvider` (TanStack Query client).
 - `supabase/` — `migrations/`, `functions/sync-problems/` (Deno Edge
   Function), `config.toml`, `README.md`. Excluded from the Next.js
@@ -48,14 +49,17 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
   solution + `detail_synced_at`, plus `starter_code` jsonb: hand-authored
   per-problem starter code keyed by language, seeded by migration and
   preserved across syncs), `tags`, and a `sync_runs` audit table. RLS
-  makes anon/auth **read-only**; only the service role (Edge Function)
-  writes.
+  makes anon/auth **read-only**; only the service role (Edge Function /
+  migrations) writes. **Custom problems** live here too as `source='custom'`
+  rows (e.g. `custom-<slug>` ids), seeded by migration; the daily sync
+  upserts LeetCode rows by id and never deletes, so custom rows survive.
 - **Live API (fallback)**: `https://leetcode-api-pied.vercel.app`
   (configurable). Read when Supabase env vars are unset, or the DB
-  returns empty/errors — so local dev works keyless.
-- **In-code (version-controlled)**: custom problems, preset lists,
-  roadmap, practice content, starter templates. Merged in the app
-  layer; never written to Supabase.
+  returns empty/errors — so local dev works keyless. (Custom problems are
+  DB-only, so they don't appear in keyless dev.)
+- **In-code (version-controlled)**: preset lists, roadmap, practice
+  content, starter templates. Merged in the app layer; never written to
+  Supabase. (Custom problems were here previously; now DB-backed.)
 - **localStorage (`devstudio:` prefix)**: all user state — filters,
   solved/attempted status, per-(problem,language) code drafts,
   user-created lists, selected language, theme, per-problem countdown
@@ -101,7 +105,7 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 1. The UI is **source-agnostic**: components and hooks read through
    `lib/leetcode.ts`'s normalized shape (`getProblems` / `getProblem`
    / `getProblemsByTag` / `getTags`) and never know whether data came
-   from Supabase, the live API, or `customProblems.ts`.
+   from Supabase (LeetCode or `source='custom'` rows) or the live API.
 2. Every catalog read path falls back to the live API on
    absence/empty/error, so the app runs with **zero env vars set**.
 3. All user state is localStorage-only and namespaced with the
@@ -116,9 +120,11 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
    public Wandbox API (`hooks/useRunJava.ts` — no key, user code leaves
    the browser). All other languages stay editor-only (draft autosave).
    There is no Submit/grader — Run just executes the editor buffer.
-6. Custom problems, lists, roadmap, and practice are curated in code
-   and resolve through the normal data layer — a slug missing from
-   the catalog is silently skipped, never an error.
+6. Lists, roadmap, and practice are curated in code and resolve through
+   the normal data layer — a slug missing from the catalog is silently
+   skipped, never an error. Custom problems are now **DB rows**
+   (`source='custom'`), added by migration; they read through the same
+   path as the catalog (so they're absent only in keyless dev).
 7. Supabase detail is fetched by `title_slug`, never numeric id (the
    API mis-resolves bare numbers as frontend ids); "has detail" means
    `detail_synced_at != null`, not `content != null`.
