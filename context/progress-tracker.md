@@ -114,7 +114,10 @@ Update this file after every meaningful implementation change.
 - **Non-traditional problems** — added the first build & debug exercise
   ("Cloud Gaming — Membership & Billing", custom `C3`) and a new
   `beyond-leetcode` preset list to hold this style of problem (class
-  design / simulation, not single-function puzzles).
+  design / simulation, not single-function puzzles). C3 now ships
+  hand-authored `java` + `javascript` starters too (same data model,
+  same planted bug + Task 2/3 stubs, same example suite as python3);
+  stub → red FAILED, solved → green OK verified in all three languages.
 - **Collaboration (real-time co-editing)** — shippable, built across 3
   increments: (1) `collab_sessions` table + scoped RLS (anon
   insert/select/update) + size cap + daily retention sweep (delete

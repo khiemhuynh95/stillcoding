@@ -300,6 +300,252 @@ class TestMembership(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 `,
+      java: `import java.util.*;
+
+enum MemberType { FREE, PLUS, MAX }
+
+class Session {
+    int sessionId, startTime, endTime;
+
+    Session(int sessionId, int startTime, int endTime) {
+        this.sessionId = sessionId;
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+
+    int getDuration() {
+        return endTime - startTime;
+    }
+}
+
+class Member {
+    int id;
+    MemberType memberType;
+    List<Session> sessions;
+
+    Member(int id, MemberType memberType, List<Session> sessions) {
+        this.id = id;
+        this.memberType = memberType;
+        this.sessions = sessions != null ? new ArrayList<>(sessions) : new ArrayList<>();
+    }
+
+    Member(int id, MemberType memberType) {
+        this(id, memberType, null);
+    }
+
+    void addSession(Session session) {
+        sessions.add(session);
+    }
+}
+
+class MemberShip {
+    List<Member> members;
+
+    MemberShip(List<Member> members) {
+        this.members = members != null ? new ArrayList<>(members) : new ArrayList<>();
+    }
+
+    MemberShip() {
+        this(null);
+    }
+
+    void addMember(Member member) {
+        members.add(member);
+    }
+
+    // ---- Task 1 (has a bug) --------------------------------------------
+    int countPaidMembers() {
+        int count = 0;
+        for (Member member : members) {
+            if (member.memberType == MemberType.PLUS) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // ---- Task 2 --------------------------------------------------------
+    // Return { memberId: averageSessionDurationMinutes }; null for no sessions.
+    Map<Integer, Double> getAvgDurations() {
+        return null;
+    }
+
+    // ---- Task 3 --------------------------------------------------------
+    // Return { memberId: amountDue }.
+    Map<Integer, Double> getDuePayments() {
+        return null;
+    }
+}
+
+// Implement the methods and fix the bug above, then press Run.
+class Main {
+    static int ran = 0, failed = 0;
+    static StringBuilder dots = new StringBuilder();
+    static List<String> fails = new ArrayList<>();
+
+    static MemberShip build() {
+        Member m1 = new Member(1, MemberType.FREE, Arrays.asList(
+            new Session(1, 0, 30), new Session(2, 60, 120), new Session(3, 180, 300)));
+        Member m2 = new Member(2, MemberType.PLUS, Arrays.asList(
+            new Session(4, 0, 60), new Session(5, 120, 180),
+            new Session(6, 240, 300), new Session(7, 360, 450)));
+        Member m3 = new Member(3, MemberType.MAX, Arrays.asList(
+            new Session(8, 0, 45), new Session(9, 60, 135)));
+        Member m4 = new Member(4, MemberType.FREE);
+        return new MemberShip(Arrays.asList(m1, m2, m3, m4));
+    }
+
+    static void runTest(String name, Runnable r) {
+        ran++;
+        try { r.run(); dots.append('.'); }
+        catch (AssertionError e) { failed++; dots.append('F'); fails.add("FAIL: " + name + ": " + e.getMessage()); }
+        catch (Throwable t) { failed++; dots.append('E'); fails.add("ERROR: " + name + ": " + t); }
+    }
+
+    static void assertEq(Object got, Object want) {
+        if (!Objects.equals(got, want)) throw new AssertionError("expected " + want + " but got " + got);
+    }
+
+    static void assertClose(Double got, double want) {
+        if (got == null || Math.abs(got - want) > 1e-6) throw new AssertionError("expected " + want + " but got " + got);
+    }
+
+    static void assertNull(Object got) {
+        if (got != null) throw new AssertionError("expected null but got " + got);
+    }
+
+    public static void main(String[] args) {
+        runTest("test_count_paid_members", () -> {
+            assertEq(build().countPaidMembers(), 2);
+        });
+        runTest("test_avg_durations", () -> {
+            Map<Integer, Double> avg = build().getAvgDurations();
+            assertClose(avg.get(1), 70.0);
+            assertClose(avg.get(2), 67.5);
+            assertClose(avg.get(3), 60.0);
+            assertNull(avg.get(4));
+        });
+        runTest("test_due_payments", () -> {
+            Map<Integer, Double> due = build().getDuePayments();
+            assertClose(due.get(1), 30.0);
+            assertClose(due.get(2), 16.0);
+            assertClose(due.get(3), 0.0);
+            assertClose(due.get(4), 0.0);
+        });
+        report();
+    }
+
+    static void report() {
+        System.err.println(dots.toString());
+        for (String f : fails) System.err.println(f);
+        System.err.println("----------------------------------------------------------------------");
+        System.err.println("Ran " + ran + " test" + (ran == 1 ? "" : "s"));
+        System.err.println();
+        System.err.println(failed == 0 ? "OK" : "FAILED (failures=" + failed + ")");
+    }
+}
+`,
+      javascript: `const MemberType = { FREE: "FREE", PLUS: "PLUS", MAX: "MAX" };
+
+class Session {
+  constructor(sessionId, startTime, endTime) {
+    this.sessionId = sessionId;
+    this.startTime = startTime;
+    this.endTime = endTime;
+  }
+  getDuration() {
+    return this.endTime - this.startTime;
+  }
+}
+
+class Member {
+  constructor(id, memberType, sessions) {
+    this.id = id;
+    this.memberType = memberType;
+    this.sessions = sessions ? sessions.slice() : [];
+  }
+  addSession(session) {
+    this.sessions.push(session);
+  }
+}
+
+class MemberShip {
+  constructor(members) {
+    this.members = members ? members.slice() : [];
+  }
+  addMember(member) {
+    this.members.push(member);
+  }
+
+  // ---- Task 1 (has a bug) ----------------------------------------------
+  countPaidMembers() {
+    let count = 0;
+    for (const member of this.members) {
+      if (member.memberType === MemberType.PLUS) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  // ---- Task 2 ----------------------------------------------------------
+  // Return { memberId: averageSessionDurationMinutes }; null for no sessions.
+  getAvgDurations() {}
+
+  // ---- Task 3 ----------------------------------------------------------
+  // Return { memberId: amountDue }.
+  getDuePayments() {}
+}
+
+// Implement the methods and fix the bug above, then press Run.
+(function () {
+  let ran = 0, failed = 0;
+  const dots = [], fails = [];
+
+  function build() {
+    const m1 = new Member(1, MemberType.FREE, [new Session(1, 0, 30), new Session(2, 60, 120), new Session(3, 180, 300)]);
+    const m2 = new Member(2, MemberType.PLUS, [new Session(4, 0, 60), new Session(5, 120, 180), new Session(6, 240, 300), new Session(7, 360, 450)]);
+    const m3 = new Member(3, MemberType.MAX, [new Session(8, 0, 45), new Session(9, 60, 135)]);
+    const m4 = new Member(4, MemberType.FREE);
+    return new MemberShip([m1, m2, m3, m4]);
+  }
+
+  function fail(msg) { const e = new Error(msg); e.__assert = true; throw e; }
+  function runTest(name, fn) {
+    ran++;
+    try { fn(); dots.push("."); }
+    catch (e) { failed++; dots.push(e && e.__assert ? "F" : "E"); fails.push((e && e.__assert ? "FAIL: " : "ERROR: ") + name + ": " + (e && e.message ? e.message : e)); }
+  }
+  function assertEq(got, want) { if (got !== want) fail("expected " + want + " but got " + got); }
+  function assertClose(got, want) { if (got == null || Math.abs(got - want) > 1e-6) fail("expected " + want + " but got " + got); }
+  function assertNull(got) { if (got != null) fail("expected null but got " + got); }
+
+  runTest("test_count_paid_members", function () {
+    assertEq(build().countPaidMembers(), 2);
+  });
+  runTest("test_avg_durations", function () {
+    const avg = build().getAvgDurations();
+    assertClose(avg[1], 70.0);
+    assertClose(avg[2], 67.5);
+    assertClose(avg[3], 60.0);
+    assertNull(avg[4]);
+  });
+  runTest("test_due_payments", function () {
+    const due = build().getDuePayments();
+    assertClose(due[1], 30.0);
+    assertClose(due[2], 16.0);
+    assertClose(due[3], 0.0);
+    assertClose(due[4], 0.0);
+  });
+
+  console.error(dots.join(""));
+  fails.forEach((f) => console.error(f));
+  console.error("----------------------------------------------------------------------");
+  console.error("Ran " + ran + " test" + (ran === 1 ? "" : "s"));
+  console.error("");
+  console.error(failed === 0 ? "OK" : "FAILED (failures=" + failed + ")");
+})();
+`,
     },
   },
 ];
