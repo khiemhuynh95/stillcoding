@@ -8,13 +8,6 @@ import type {
   Tag,
 } from "./types";
 import {
-  customMatchingTag,
-  customSummaries,
-  customToDetail,
-  findCustomBySlug,
-  mergeTagCounts,
-} from "./customProblems";
-import {
   fetchProblemFromDb,
   fetchProblemsByTagFromDb,
   fetchProblemsFromDb,
@@ -48,22 +41,22 @@ export function parseStats(raw: string | null | undefined): ProblemStats | null 
 }
 
 /**
- * All problems, custom merged in first. Reads from the persisted Supabase table
- * (kept fresh by the daily sync) when configured, falling back to the live
- * GET /problems when Supabase is absent or empty.
+ * All problems. Reads from the persisted Supabase table (kept fresh by the daily
+ * sync) when configured, falling back to the live GET /problems when Supabase is
+ * absent or empty. Custom problems are `source='custom'` rows in the same table,
+ * so they come through here like any other (they're absent in keyless dev).
  */
 export async function getProblems(): Promise<ProblemSummary[]> {
   if (supabaseEnabled) {
     try {
       const rows = await fetchProblemsFromDb();
-      if (rows && rows.length) return [...customSummaries(), ...rows];
+      if (rows && rows.length) return rows;
     } catch (err) {
       // Fall through to the live API if the DB read fails.
       console.error("Supabase problems read failed, falling back to API:", err);
     }
   }
-  const api = await apiFetch<ProblemSummary[]>("/problems");
-  return [...customSummaries(), ...api];
+  return apiFetch<ProblemSummary[]>("/problems");
 }
 
 /**
@@ -76,7 +69,7 @@ export async function getProblemsByTag(slug: string): Promise<ProblemSummary[]> 
     try {
       const rows = await fetchProblemsByTagFromDb(slug);
       // Empty can mean detail isn't backfilled yet, so fall through to the API.
-      if (rows && rows.length) return [...customMatchingTag(slug), ...rows];
+      if (rows && rows.length) return rows;
     } catch (err) {
       console.error("Supabase tag read failed, falling back to API:", err);
     }
@@ -93,13 +86,11 @@ export async function getProblemsByTag(slug: string): Promise<ProblemSummary[]> 
     skip += data.problems.length;
     if (!data.problems.length || skip >= data.total) break;
   }
-  return [...customMatchingTag(slug), ...all];
+  return all;
 }
 
 /** GET /problem/{id_or_slug} — full detail, with stats parsed and slug attached. */
 export async function getProblem(slugOrId: string): Promise<ProblemDetail> {
-  const custom = findCustomBySlug(slugOrId);
-  if (custom) return customToDetail(custom);
   if (supabaseEnabled) {
     try {
       const row = await fetchProblemFromDb(slugOrId);
@@ -118,18 +109,17 @@ export async function getProblem(slugOrId: string): Promise<ProblemDetail> {
   };
 }
 
-/** Topic tags with problem counts (custom tags folded in). DB first, API fallback. */
+/** Topic tags with problem counts. DB first, API fallback. */
 export async function getTags(): Promise<Tag[]> {
   if (supabaseEnabled) {
     try {
       const rows = await fetchTagsFromDb();
-      if (rows && rows.length) return mergeTagCounts(rows);
+      if (rows && rows.length) return rows;
     } catch (err) {
       console.error("Supabase tags read failed, falling back to API:", err);
     }
   }
-  const api = await apiFetch<Tag[]>("/tags");
-  return mergeTagCounts(api);
+  return apiFetch<Tag[]>("/tags");
 }
 
 /** GET /random — a single random problem (optionally filtered by difficulty). */

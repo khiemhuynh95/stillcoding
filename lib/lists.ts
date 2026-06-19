@@ -494,8 +494,8 @@ const TOP_100_LIKED: string[] = [
 
 // ── Beyond LeetCode (non-traditional build & debug problems) ────────────
 // Multi-part, real-world style exercises — class design, bug-fixing, and
-// simulation — rather than single-function algorithm puzzles. These live in
-// lib/customProblems.ts, so their slugs only resolve from the custom source.
+// simulation — rather than single-function algorithm puzzles. These are DB rows
+// with source='custom' (so they only resolve when Supabase is configured).
 const BEYOND_LEETCODE: string[] = [
   "cloud-gaming-membership-billing",
 ];

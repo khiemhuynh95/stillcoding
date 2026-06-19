@@ -6,7 +6,7 @@
  * curated here (edit freely). Each node sits at a (row, col) on a grid, lists
  * its prerequisite nodes in `deps` (which draw the connecting edges), and holds
  * problem slugs. Slugs resolve through the normal data layer, so they may be
- * LeetCode problems OR your own custom ones (lib/customProblems.ts).
+ * LeetCode problems OR your own custom ones (DB rows with source='custom').
  * Progress is computed from your solved status — nothing else to maintain.
  * ─────────────────────────────────────────────────────────────────────────
  */

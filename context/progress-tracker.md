@@ -306,6 +306,23 @@ Update this file after every meaningful implementation change.
   Wall-clock based, so cross-machine clock skew can offset a shared reading
   slightly (fine for a study timer). `tsc --noEmit` + `npm run build` pass.
 
+- **Custom problems moved to the DB** — reverses the original "custom problems
+  in code" call. C1/C2/C3 are now `source='custom'` rows in `public.problems`
+  (id `custom-<slug>`, `detail_synced_at` set, full content/hints/topic_tags +
+  `starter_code` incl. C3's java/javascript). Migration
+  `20260618000002_custom_problems.sql` seeds them (idempotent `on conflict (id)`
+  upsert) and they were applied live via service role. The in-code path is
+  **removed**: `lib/customProblems.ts` deleted and `lib/leetcode.ts` no longer
+  merges custom data (getProblems/getProblem/getProblemsByTag/getTags read
+  purely from the DB / API). Safe across the daily sync (upserts LeetCode by id,
+  never deletes; custom ids never collide). **Add future custom problems** as
+  another such row (migration). **Tradeoffs:** custom problems are DB-only now,
+  so they don't show in keyless dev; and the old `mergeTagCounts` (+1 to a tag's
+  sidebar count per custom problem) is gone — custom problems still appear under
+  their tag *filter* (topic_tags containment) but don't bump the sidebar count.
+  `scratch/` added to tsconfig `exclude`. `tsc` + `npm run build` pass; read
+  paths verified live (slug resolve + tag containment).
+
 ## Next Up
 
 - Continue roadmap / practice topic coverage.
