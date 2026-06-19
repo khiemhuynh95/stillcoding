@@ -100,6 +100,11 @@ review) layered on top of raw LeetCode data.
   is a capability URL and sessions expire. Opt-in and only available
   when Supabase is configured. Users can "fork" a session back into
   their own local draft. One session = one (problem, language).
+- A **per-problem countdown timer** in the editor header: the user sets a
+  duration in minutes and it counts down. Solo, it persists to localStorage
+  per problem; in a collaboration session it becomes a **shared** timer
+  (anyone can start / pause / reset / change the minutes, synced to
+  everyone). Same control either way.
 
 ### Extras
 

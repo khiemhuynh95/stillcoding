@@ -44,5 +44,6 @@ export const storageKeys = {
   collabIdentity: "collabIdentity",
   editorFontSize: "editorFontSize",
   collabLast: (slug: string) => `collabLast:${slug}`,
+  timer: (slug: string) => `timer:${slug}`,
   draft: (slug: string, lang: string) => `draft:${slug}:${lang}`,
 } as const;

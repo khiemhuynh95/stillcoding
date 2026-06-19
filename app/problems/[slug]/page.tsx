@@ -10,11 +10,13 @@ import { ProblemDescription } from "@/components/coding/ProblemDescription";
 import { CodeEditor } from "@/components/coding/CodeEditor";
 import { SaveToList } from "@/components/coding/SaveToList";
 import { ShareButton } from "@/components/coding/ShareButton";
+import { SessionTimer } from "@/components/coding/SessionTimer";
 import { BrownNoise } from "@/components/coding/BrownNoise";
 import { useProblem } from "@/hooks/useProblems";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useCodeDraft } from "@/hooks/useCodeDraft";
 import { useCollabSession } from "@/hooks/useCollabSession";
+import { useEditorTimer } from "@/hooks/useEditorTimer";
 import { useSolvedStatus } from "@/hooks/useSolvedStatus";
 import { collabEnabled } from "@/lib/collab";
 import { storageGet, storageKeys, storageRemove, storageSet } from "@/lib/storage";
@@ -41,6 +43,10 @@ function CodingPage() {
   const router = useRouter();
 
   const collab = useCollabSession(sessionId);
+  // Per-problem solo stopwatch; in a collab session the shared timer takes over
+  // so everyone sees the same clock.
+  const soloTimer = useEditorTimer(slug);
+  const timer = collab.active ? collab.timer : soloTimer;
 
   const { data: detail, isLoading, isError, refetch } = useProblem(slug);
   const [lang, setLang] = useLocalStorage<string>(
@@ -116,6 +122,7 @@ function CodingPage() {
         </span>
       )}
       <BrownNoise />
+      <SessionTimer timer={timer} shared={collab.active} />
       <ShareButton
         slug={slug}
         language={effectiveLang}

@@ -277,6 +277,32 @@ Update this file after every meaningful implementation change.
     `scratch/gen_js.py`. Coverage beats Java (3,011) because JS needs no
     LeetCode signature, so premium problems synthesize from python too.
 
+- **Editor countdown timer (solo + shared)** — a set-minutes / start / pause /
+  reset **countdown** in the editor header, present in **both** the regular
+  editor and collaboration sessions. The shared `Timer` shape + state machine
+  (pure transitions) live in `lib/timer.ts` (`TimerSnapshot { durationMs,
+  running, startedAt, remainingMs }`; `remainingMs` is *derived* as
+  `remainingAtStart − (now − startedAt)` clamped ≥ 0 while running, so the
+  display ticks **locally** once a second and the stored state only changes on
+  start/stop/reset/set-duration). Reaching zero auto-freezes (`finishTimer`);
+  pressing play when finished restarts from the full duration. Two backends, one
+  component:
+  - **Solo** (`hooks/useEditorTimer.ts`) — per-problem, persisted to
+    localStorage (`timer:<slug>`); a countdown left running keeps ticking across
+    reloads (reading is wall-clock derived).
+  - **Shared** (`useCollabSession().timer`) — the snapshot lives on the *same
+    Yjs doc* as the code buffer, in a `timer` `Y.Map`, so it converges over the
+    existing Realtime Broadcast transport and rides along in the debounced `doc`
+    snapshot for late-joiners — no new table/RLS/transport. **Anyone in the
+    session can start / pause / reset / change the minutes** (everyone writes the
+    same map; the auto-finish write is no-op-guarded so redundant cross-client
+    writes are harmless).
+  The page picks `collab.active ? collab.timer : soloTimer` and always renders
+  `components/coding/SessionTimer.tsx` (play/pause + a minutes input popover with
+  presets + reset; `m:ss`/`h:mm:ss`; `shared` prop only adjusts tooltips).
+  Wall-clock based, so cross-machine clock skew can offset a shared reading
+  slightly (fine for a study timer). `tsc --noEmit` + `npm run build` pass.
+
 ## Next Up
 
 - Continue roadmap / practice topic coverage.
