@@ -58,7 +58,8 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
   layer; never written to Supabase.
 - **localStorage (`devstudio:` prefix)**: all user state — filters,
   solved/attempted status, per-(problem,language) code drafts,
-  user-created lists, selected language, theme. Not synced anywhere.
+  user-created lists, selected language, theme, per-problem countdown
+  timer (`timer:<slug>`). Not synced anywhere.
 - **Supabase `collab_sessions` (client-writable)**: the one table the
   app writes to. Holds a shared code buffer for live co-editing — id
   (unguessable), slug, language, a base64 Yjs snapshot (`doc`),
@@ -66,6 +67,12 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
   on this table **only**; it is a capability URL (anyone with the link
   can read + edit). Live keystrokes flow over Realtime Broadcast (not
   the DB); the row is just a debounced snapshot for late-joiners/reload.
+  The same Yjs doc also carries a `timer` `Y.Map` — a **shared session
+  countdown** (`{ durationMs, running, startedAt, remainingMs }`): any
+  collaborator can start/pause/reset/set-minutes, it converges over Broadcast
+  and rides along in the `doc` snapshot. It writes only on
+  start/stop/reset/set (display ticks are local), so a running timer adds no
+  extra traffic.
   **Retention**: a daily pg_cron job deletes sessions idle for 30 days
   (by `updated_at`, which the snapshot save bumps — active sessions
   slide forward, only idle ones are reaped). The shared buffer is

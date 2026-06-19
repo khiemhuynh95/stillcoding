@@ -16,11 +16,43 @@ import {
   saveCollabSnapshot,
   setCollabName,
 } from "@/lib/collab";
+import {
+  type Timer,
+  type TimerSnapshot,
+  EMPTY_TIMER,
+  coerceTimer,
+  remainingFrom,
+  startTimer,
+  pauseTimer,
+  resetTimer,
+  withDuration,
+  finishTimer,
+} from "@/lib/timer";
 
 /** A peer currently present in the session (from Yjs awareness). */
 export interface CollabPeer {
   clientId: number;
   user: CollabUser;
+}
+
+/** Read the timer snapshot off the shared map, tolerating a fresh/empty map. */
+function readTimer(map: Y.Map<unknown>): TimerSnapshot {
+  return coerceTimer({
+    durationMs: map.get("durationMs"),
+    running: map.get("running"),
+    startedAt: map.get("startedAt"),
+    remainingMs: map.get("remainingMs"),
+  });
+}
+
+/** Write a snapshot onto the shared map in one transaction (one Yjs update). */
+function writeTimer(map: Y.Map<unknown>, next: TimerSnapshot): void {
+  map.doc?.transact(() => {
+    map.set("durationMs", next.durationMs);
+    map.set("running", next.running);
+    map.set("startedAt", next.startedAt);
+    map.set("remainingMs", next.remainingMs);
+  });
 }
 
 export interface CollabState {
@@ -44,6 +76,8 @@ export interface CollabState {
   me: CollabUser;
   /** Rename the local user (persisted + broadcast to peers). */
   setName: (name: string) => void;
+  /** Shared session countdown (synced; anyone can start/stop/set). */
+  timer: Timer;
 }
 
 const SNAPSHOT_DEBOUNCE_MS = 4000;
@@ -68,6 +102,7 @@ export function useCollabSession(sessionId: string | null): CollabState {
   const [peers, setPeers] = useState<CollabPeer[]>([]);
   const [session, setSession] = useState<CollabSession | null>(null);
   const [sessionMissing, setSessionMissing] = useState(false);
+  const [timerMap, setTimerMap] = useState<Y.Map<unknown> | null>(null);
 
   useEffect(() => {
     if (!sessionId || !collabEnabled) {
@@ -77,6 +112,7 @@ export function useCollabSession(sessionId: string | null): CollabState {
 
     const doc = new Y.Doc();
     const text = doc.getText("monaco");
+    const timer = doc.getMap("timer");
     const provider = new SupabaseYjsProvider(sessionId, doc);
     let snapshotTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
@@ -85,6 +121,7 @@ export function useCollabSession(sessionId: string | null): CollabState {
     awarenessRef.current = provider.awareness;
     setYtext(text);
     setAwareness(provider.awareness);
+    setTimerMap(timer);
 
     const offStatus = provider.onStatus(setStatus);
 
@@ -131,11 +168,66 @@ export function useCollabSession(sessionId: string | null): CollabState {
       awarenessRef.current = null;
       setYtext(null);
       setAwareness(null);
+      setTimerMap(null);
       setPeers([]);
       setSession(null);
       setSessionMissing(false);
     };
   }, [sessionId]);
+
+  // --- Shared countdown -----------------------------------------------------
+  // Mirror the Yjs timer map into React state, then locally tick once a second
+  // while running so the displayed value advances without any network traffic
+  // (the map only changes on start/stop/reset/set, which is what actually syncs).
+  const [timerSnap, setTimerSnap] = useState<TimerSnapshot>(EMPTY_TIMER);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!timerMap) {
+      setTimerSnap(EMPTY_TIMER);
+      return;
+    }
+    const sync = () => setTimerSnap(readTimer(timerMap));
+    sync();
+    timerMap.observe(sync);
+    return () => timerMap.unobserve(sync);
+  }, [timerMap]);
+
+  useEffect(() => {
+    if (!timerSnap.running) return;
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [timerSnap.running]);
+
+  // Apply a pure transition to the shared map (skips a write on a no-op).
+  const applyTimer = useCallback(
+    (fn: (s: TimerSnapshot) => TimerSnapshot) => {
+      if (!timerMap) return;
+      const current = readTimer(timerMap);
+      const next = fn(current);
+      if (next !== current) writeTimer(timerMap, next);
+    },
+    [timerMap],
+  );
+
+  const remainingMs = remainingFrom(timerSnap, Date.now());
+
+  // Freeze at zero once the countdown crosses the deadline. (Every present
+  // client may fire this; the no-op guard makes the redundant writes harmless.)
+  useEffect(() => {
+    if (timerSnap.running && remainingMs <= 0) applyTimer(finishTimer);
+  }, [timerSnap.running, remainingMs, applyTimer]);
+
+  const timer: Timer = {
+    running: timerSnap.running,
+    remainingMs,
+    durationMs: timerSnap.durationMs,
+    finished: remainingMs === 0,
+    start: useCallback(() => applyTimer((s) => startTimer(s, Date.now())), [applyTimer]),
+    stop: useCallback(() => applyTimer((s) => pauseTimer(s, Date.now())), [applyTimer]),
+    reset: useCallback(() => applyTimer(resetTimer), [applyTimer]),
+    setDuration: useCallback((ms: number) => applyTimer((s) => withDuration(s, ms)), [applyTimer]),
+  };
 
   const setName = useCallback((name: string) => {
     const updated = setCollabName(name);
@@ -154,5 +246,6 @@ export function useCollabSession(sessionId: string | null): CollabState {
     sessionMissing,
     me,
     setName,
+    timer,
   };
 }
