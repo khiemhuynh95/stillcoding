@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { TopNav } from "@/components/layout/TopNav";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Sidebar } from "@/components/browse/Sidebar";
@@ -75,6 +75,20 @@ export default function BrowsePage() {
     return findPresetList(filters.list) ?? null;
   }, [filters.list, userLists]);
 
+  // Lowercased "title + number" haystack per problem, rebuilt only when the
+  // catalog changes — so typing doesn't re-lowercase every title each keystroke.
+  const searchIndex = useMemo(() => {
+    const index = new Map<ProblemSummary, string>();
+    for (const p of problems ?? []) {
+      index.set(p, `${p.title.toLowerCase()} ${p.frontend_id.toLowerCase()}`);
+    }
+    return index;
+  }, [problems]);
+
+  // Defer the search term so the input stays responsive while the (potentially
+  // large) filter + table recompute runs off the typing critical path.
+  const deferredSearch = useDeferredValue(filters.search);
+
   const view = useMemo(() => {
     let list = problems ?? [];
     if (activeList) {
@@ -86,17 +100,13 @@ export default function BrowsePage() {
     if (filters.difficulties.length) {
       list = list.filter((p) => filters.difficulties.includes(p.difficulty));
     }
-    const q = filters.search.trim().toLowerCase();
+    const q = deferredSearch.trim().toLowerCase();
     if (q) {
-      list = list.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.frontend_id.toLowerCase().includes(q),
-      );
+      list = list.filter((p) => searchIndex.get(p)?.includes(q));
     }
     // A list keeps its curated order; otherwise apply the sort dropdown.
     return activeList ? list : sortProblems(list, filters.sort);
-  }, [problems, activeList, filters.difficulties, filters.search, filters.sort]);
+  }, [problems, activeList, filters.difficulties, deferredSearch, filters.sort, searchIndex]);
 
   // Reset to the first page whenever the result set changes.
   useEffect(() => {
