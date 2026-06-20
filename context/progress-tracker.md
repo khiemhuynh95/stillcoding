@@ -33,6 +33,13 @@ Update this file after every meaningful implementation change.
 - **Practice** — per-topic syntax cheat sheets (`/practice/[topic]`).
 - **Deploy** — Vercel-ready; practice mode + brown noise; analytics;
   prefetch-on-hover + optimized font loading.
+- **Mobile browse filters** — extracted the desktop sidebar body into a
+  shared `SidebarContent` reused by both `Sidebar` (aside, `lg+`) and a new
+  `MobileFilters` slide-over drawer (`<lg`), so Lists / Popular Topics /
+  Categories / Difficulty are reachable on phones (previously the whole
+  sidebar was `hidden lg:flex`). Trigger shows an active-filter count badge;
+  drawer locks body scroll and closes on backdrop/Escape. Replaced the old
+  inline mobile-only difficulty pills (difficulty now lives in the drawer).
 
 ## In Progress
 
