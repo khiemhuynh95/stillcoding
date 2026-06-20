@@ -9,10 +9,11 @@ import { ProblemsTable } from "@/components/browse/ProblemsTable";
 import { Pagination } from "@/components/browse/Pagination";
 import { RandomFab } from "@/components/browse/RandomFab";
 import { useFilters, type SortKey } from "@/hooks/useFilters";
-import { useProblems, useTags } from "@/hooks/useProblems";
+import { useProblems } from "@/hooks/useProblems";
 import { useSolvedStatus } from "@/hooks/useSolvedStatus";
 import { useLists } from "@/hooks/useLists";
 import { findPresetList, isUserListId, type ProblemList } from "@/lib/lists";
+import { POPULAR_TOPICS } from "@/lib/topics";
 import type { Difficulty, ProblemSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +58,6 @@ function sortProblems(list: ProblemSummary[], sort: SortKey): ProblemSummary[] {
 export default function BrowsePage() {
   const [filters, setFilters] = useFilters();
   const { data: problems, isLoading, isError, refetch } = useProblems(filters.tag);
-  const { data: tags, isLoading: tagsLoading } = useTags();
   const { map: solvedMap, hydrated: solvedHydrated } = useSolvedStatus();
   const {
     lists: userLists,
@@ -90,7 +90,9 @@ export default function BrowsePage() {
     const q = filters.search.trim().toLowerCase();
     if (q) {
       list = list.filter(
-        (p) => p.title.toLowerCase().includes(q) || p.frontend_id.includes(q),
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.frontend_id.toLowerCase().includes(q),
       );
     }
     // A list keeps its curated order; otherwise apply the sort dropdown.
@@ -122,7 +124,7 @@ export default function BrowsePage() {
     setFilters((f) => ({ ...f, list: id, tag: id ? null : f.tag }));
 
   const activeTagName =
-    tags?.find((t) => t.slug === filters.tag)?.name ?? filters.tag;
+    POPULAR_TOPICS.find((t) => t.slug === filters.tag)?.name ?? filters.tag;
 
   return (
     <div className="h-screen flex flex-col">
@@ -141,8 +143,6 @@ export default function BrowsePage() {
           onSelectList={selectList}
           onCreateList={createList}
           onDeleteList={deleteList}
-          tags={tags}
-          tagsLoading={tagsLoading}
         />
         <main className="flex-1 overflow-y-auto custom-scrollbar p-gutter lg:p-8 pb-28">
           <div className="max-w-6xl mx-auto">

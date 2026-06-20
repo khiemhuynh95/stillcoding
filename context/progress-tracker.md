@@ -112,9 +112,10 @@ Update this file after every meaningful implementation change.
   (`codeSnippets`/`metaData`/`content`) for rows whose `starter_code` is
   null.
 - **Non-traditional problems** — added the first build & debug exercise
-  ("Cloud Gaming — Membership & Billing", custom `C3`) and a new
-  `beyond-leetcode` preset list to hold this style of problem (class
-  design / simulation, not single-function puzzles). C3 now ships
+  ("Cloud Gaming — Membership & Billing", custom `C3`), a class
+  design / simulation problem rather than a single-function puzzle. (It first
+  lived in a `beyond-leetcode` preset list, since removed — all C problems now
+  live in the `custom` preset list instead.) C3 now ships
   hand-authored `java` + `javascript` starters too (same data model,
   same planted bug + Task 2/3 stubs, same example suite as python3);
   stub → red FAILED, solved → green OK verified in all three languages.
@@ -322,6 +323,27 @@ Update this file after every meaningful implementation change.
   their tag *filter* (topic_tags containment) but don't bump the sidebar count.
   `scratch/` added to tsconfig `exclude`. `tsc` + `npm run build` pass; read
   paths verified live (slug resolve + tag containment).
+  - **C4 added (`decode-scrambled-sentence`)** — a single-function string/hash
+    problem (Medium), tags hash-table/string/sorting, seeded by
+    `20260620000001_custom_problem_c4.sql` (same idempotent `on conflict (id)`
+    upsert pattern). Ships starter code + inline tests for **all three runnable
+    languages** (python3 `unittest`, java + javascript stderr harnesses) over
+    the same example cases (examples + mutual-anagram + repeats/short-word +
+    single-token); each verified stub → FAILED, reference → OK (python local,
+    js via Node, java via Wandbox). Collision handling is intentionally out of
+    scope — the statement guarantees a unique (first, last, sorted-letters)
+    source word per token. **Manual step:** apply the migration (`supabase db
+    push` or SQL editor); DB-only, so absent in keyless dev.
+  - **All C-series problems grouped into a "Custom" preset list**
+    (`lib/lists.ts` `CUSTOM_PROBLEMS`, id `custom`) — C1..C4 in order. The
+    former `beyond-leetcode` preset was removed (C3 now lives in `custom`).
+- **Static "Popular Topics" + id/name search** — the browse sidebar topics are
+  now a curated static list (`lib/topics.ts` `POPULAR_TOPICS`) instead of the
+  async `useTags()`/DB read (instant render, predictable set); `useTags` was
+  removed from `hooks/useProblems.ts` (the `getTags` data-layer path stays).
+  Browse search now matches title or `frontend_id` **case-insensitively**, so a
+  custom id like `C4` is findable when typed (was a case bug — query lowercased
+  but `frontend_id` wasn't).
 
 ## Next Up
 

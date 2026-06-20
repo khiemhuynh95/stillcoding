@@ -1,13 +1,13 @@
 "use client";
 
-import type { Difficulty, Tag } from "@/lib/types";
+import type { Difficulty } from "@/lib/types";
 import type { SolvedMap } from "@/hooks/useSolvedStatus";
 import type { UserList } from "@/hooks/useLists";
 import { PRESET_LISTS, type ProblemList } from "@/lib/lists";
+import { POPULAR_TOPICS } from "@/lib/topics";
 import { cn } from "@/lib/utils";
 
 const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
-const MAX_TOPICS = 12;
 
 export function Sidebar({
   difficulties,
@@ -22,8 +22,6 @@ export function Sidebar({
   onSelectList,
   onCreateList,
   onDeleteList,
-  tags,
-  tagsLoading,
 }: {
   difficulties: Difficulty[];
   tag: string | null;
@@ -37,8 +35,6 @@ export function Sidebar({
   onSelectList: (id: string | null) => void;
   onCreateList: (name: string) => string;
   onDeleteList: (id: string) => void;
-  tags: Tag[] | undefined;
-  tagsLoading: boolean;
 }) {
   const solvedCount = (list: ProblemList) =>
     list.slugs.reduce(
@@ -193,38 +189,27 @@ export function Sidebar({
           <h3 className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-4">
             Popular Topics
           </h3>
-          {tagsLoading ? (
-            <div className="flex flex-wrap gap-2">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <span
-                  key={i}
-                  className="h-6 w-16 rounded-full bg-surface-variant animate-pulse"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {(tags ?? []).slice(0, MAX_TOPICS).map((t) => {
-                const active = tag === t.slug;
-                return (
-                  <button
-                    key={t.slug}
-                    type="button"
-                    title={`${t.problem_count} problems`}
-                    onClick={() => onSelectTag(active ? null : t.slug)}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-label-md font-label-md transition-colors",
-                      active
-                        ? "bg-primary text-on-primary"
-                        : "bg-surface-container-highest text-on-surface hover:bg-primary-container hover:text-on-primary-container",
-                    )}
-                  >
-                    {t.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {POPULAR_TOPICS.map((t) => {
+              const active = tag === t.slug;
+              return (
+                <button
+                  key={t.slug}
+                  type="button"
+                  title={`Filter by ${t.name}`}
+                  onClick={() => onSelectTag(active ? null : t.slug)}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-label-md font-label-md transition-colors",
+                    active
+                      ? "bg-primary text-on-primary"
+                      : "bg-surface-container-highest text-on-surface hover:bg-primary-container hover:text-on-primary-container",
+                  )}
+                >
+                  {t.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </aside>
