@@ -1,12 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  getProblem,
-  getProblems,
-  getProblemsByTag,
-  getTags,
-} from "@/lib/leetcode";
+import { getProblem, getProblems, getProblemsByTag } from "@/lib/leetcode";
 
 const FIVE_MIN = 5 * 60 * 1000;
 
@@ -25,13 +20,5 @@ export function useProblem(slug: string) {
     queryFn: () => getProblem(slug),
     staleTime: FIVE_MIN,
     enabled: Boolean(slug),
-  });
-}
-
-export function useTags() {
-  return useQuery({
-    queryKey: ["tags"],
-    queryFn: getTags,
-    staleTime: FIVE_MIN,
   });
 }

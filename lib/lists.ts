@@ -492,12 +492,15 @@ const TOP_100_LIKED: string[] = [
   "find-the-duplicate-number",
 ];
 
-// ── Beyond LeetCode (non-traditional build & debug problems) ────────────
-// Multi-part, real-world style exercises — class design, bug-fixing, and
-// simulation — rather than single-function algorithm puzzles. These are DB rows
-// with source='custom' (so they only resolve when Supabase is configured).
-const BEYOND_LEETCODE: string[] = [
-  "cloud-gaming-membership-billing",
+// ── Custom (StillCoding's own C-series problems) ────────────────────────
+// Every hand-authored "C#" problem (source='custom' DB rows), in C1..C4 order.
+// Add each new custom problem's title_slug here. DB-only, so these resolve only
+// when Supabase is configured.
+const CUSTOM_PROBLEMS: string[] = [
+  "add-digits-until-one", // C1
+  "balanced-brackets", // C2
+  "cloud-gaming-membership-billing", // C3
+  "decode-scrambled-sentence", // C4
 ];
 
 export const PRESET_LISTS: ProblemList[] = [
@@ -530,11 +533,10 @@ export const PRESET_LISTS: ProblemList[] = [
     preset: true,
   },
   {
-    id: "beyond-leetcode",
-    name: "Beyond LeetCode",
-    description:
-      "Real-world build & debug exercises — class design and simulation, not single-function puzzles.",
-    slugs: BEYOND_LEETCODE,
+    id: "custom",
+    name: "Custom",
+    description: "StillCoding's own hand-authored problems (the C-series).",
+    slugs: CUSTOM_PROBLEMS,
     preset: true,
   },
 ];

@@ -53,6 +53,13 @@
   Don't add ad-hoc fetch caching.
 - When fetching problem detail from the API/sync, key by
   `title_slug`, never numeric id.
+- The browse sidebar's "Popular Topics" is a **static curated list**
+  (`lib/topics.ts` `POPULAR_TOPICS`), not a DB/API read — each `slug`
+  must be a real tag slug since it drives `getProblemsByTag`. (`getTags`
+  still exists as a data-layer read path; it's just not used by the UI.)
+- Browse search matches a problem's title **or** its `frontend_id`
+  (e.g. `1`, `C4`); compare case-insensitively so custom ids like `C4`
+  match when typed.
 
 ## State & Storage
 
@@ -71,11 +78,25 @@
 
 ## Curated Content
 
-- Add custom problems by appending to `CUSTOM_PROBLEMS`
-  (`lib/customProblems.ts`); lists to `PRESET_LISTS` (`lib/lists.ts`);
-  roadmap nodes to `ROADMAP` (`lib/roadmap.ts`); topic cheat sheets to
-  `PRACTICE` (`lib/practice.ts`). A slug not in the catalog is
-  silently skipped — never throw on it.
+- Add custom problems as `source='custom'` rows via a new migration
+  (id `custom-<slug>`, `frontend_id` `C<n>`, `detail_synced_at` set),
+  following `20260618000002_custom_problems.sql` (C1–C3) and
+  `20260620000001_custom_problem_c4.sql` (C4); use an idempotent
+  `on conflict (id) do update` upsert. Add lists to `PRESET_LISTS`
+  (`lib/lists.ts`); roadmap nodes to `ROADMAP` (`lib/roadmap.ts`); topic
+  cheat sheets to `PRACTICE` (`lib/practice.ts`). A slug not in the
+  catalog is silently skipped — never throw on it.
+- **Every custom problem must ship starter code for all three runnable
+  languages: `python3`, `java`, and `javascript`.** These are the languages
+  the in-app runners execute (Pyodide / Wandbox / JS Web Worker), so each
+  custom problem's `starter_code` jsonb carries one entry per language. Each
+  entry is a real signature plus an inline test harness that prints a
+  unittest-style report (Python via `unittest`; Java/JS via a hand-rolled
+  harness writing the same `Ran N` / `OK` / `FAILED` lines to stderr, so the
+  console's pass/fail badge + tone-coloring work unchanged). Use the **same
+  example cases across all three**. Verify each against a reference solution
+  before seeding: stub → red `FAILED`, solved → green `OK` (Python locally,
+  JS with Node, Java via the Wandbox API).
 - Practice snippets must always include a `python3` entry (the
   fallback language); other languages are optional.
 - Per-problem starter code for **catalog** problems lives in the DB
@@ -83,8 +104,9 @@
   code. Add more by extending the seed migration, keyed by `title_slug`;
   `rowToDetail` maps it to `ProblemDetail.starterCode` and the coding
   page prefers it over the generic scaffold. Verify each Python block
-  against a reference solution before seeding. Custom problems (C1–C3)
-  still carry their own `starterCode` in `lib/customProblems.ts`.
+  against a reference solution before seeding. Custom problems carry their
+  starter code the same way (DB `starter_code` jsonb), seeded by their
+  migration — see the three-language rule above.
 - **Database (SQL) problems** seed under the `sql` key, not `python3` — a
   schema-aware SQL stub (the in-browser runner is Python-only, so these
   are editor scaffolds). Verify the reference query against sample data
