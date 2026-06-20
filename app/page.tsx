@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { TopNav } from "@/components/layout/TopNav";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Sidebar } from "@/components/browse/Sidebar";
+import { MobileFilters } from "@/components/browse/MobileFilters";
 import { SearchBar } from "@/components/browse/SearchBar";
 import { ProblemsTable } from "@/components/browse/ProblemsTable";
 import { Pagination } from "@/components/browse/Pagination";
@@ -15,10 +16,8 @@ import { useLists } from "@/hooks/useLists";
 import { findPresetList, isUserListId, type ProblemList } from "@/lib/lists";
 import { POPULAR_TOPICS } from "@/lib/topics";
 import type { Difficulty, ProblemSummary } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
-const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
 const DIFF_ORDER: Record<Difficulty, number> = { Easy: 0, Medium: 1, Hard: 2 };
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -174,26 +173,22 @@ export default function BrowsePage() {
                 </div>
               </div>
 
-              {/* Difficulty pills (mobile/tablet) + active topic chip */}
+              {/* Filters drawer trigger (mobile/tablet) + active scope chips */}
               <div className="flex flex-wrap items-center gap-2">
-                {DIFFICULTIES.map((d) => {
-                  const active = filters.difficulties.includes(d);
-                  return (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => toggleDifficulty(d)}
-                      className={cn(
-                        "px-3 py-1.5 rounded text-label-md font-label-md border transition-colors lg:hidden",
-                        active
-                          ? "bg-primary text-on-primary border-primary"
-                          : "bg-surface-container-lowest border-outline-variant hover:border-primary",
-                      )}
-                    >
-                      {d}
-                    </button>
-                  );
-                })}
+                <MobileFilters
+                  difficulties={filters.difficulties}
+                  tag={filters.tag}
+                  activeListId={filters.list}
+                  userLists={userLists}
+                  listsHydrated={listsHydrated}
+                  solvedMap={solvedMap}
+                  solvedHydrated={solvedHydrated}
+                  onToggleDifficulty={toggleDifficulty}
+                  onSelectTag={selectTag}
+                  onSelectList={selectList}
+                  onCreateList={createList}
+                  onDeleteList={deleteList}
+                />
                 {filters.tag && (
                   <span className="flex items-center gap-1 pl-3 pr-2 py-1.5 rounded-full bg-primary-tint text-primary text-label-md font-label-md">
                     {activeTagName}
