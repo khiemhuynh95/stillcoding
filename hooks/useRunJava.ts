@@ -82,6 +82,10 @@ export function useRunJava() {
   const abortRef = useRef<AbortController | null>(null);
   const [status, setStatus] = useState<RunStatus>("idle");
   const [output, setOutput] = useState<OutputLine[]>([]);
+  // Wall-clock of the last finished run. Includes the Wandbox round-trip
+  // (network + compile), so it overstates pure execution time — accepted
+  // beta caveat for the course speed bonus.
+  const [durationMs, setDurationMs] = useState<number | null>(null);
 
   const abort = useCallback(() => {
     abortRef.current?.abort();
@@ -95,6 +99,8 @@ export function useRunJava() {
       abort();
       setOutput([]);
       setStatus("running");
+      setDurationMs(null);
+      const startedAt = performance.now();
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -138,6 +144,7 @@ export function useRunJava() {
         }
 
         setOutput(lines);
+        setDurationMs(Math.round(performance.now() - startedAt));
         setStatus(data.status === "0" ? "done" : "error");
       } catch (err) {
         // cancel() aborts the fetch and owns the UI in that case.
@@ -172,5 +179,5 @@ export function useRunJava() {
 
   const isBusy = status === "running";
 
-  return { status, output, isBusy, run, cancel, clear };
+  return { status, output, durationMs, isBusy, run, cancel, clear };
 }

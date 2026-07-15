@@ -8,11 +8,11 @@ import type {
 } from "./types";
 
 /**
- * Read-only Supabase access for the persisted `problems` table. The daily sync
- * (supabase/functions/sync-problems) keeps the table fresh; the app reads from
- * it so the browse list and problem pages don't depend on the live API being
- * up. When the env vars are absent (e.g. a fresh local checkout) the client is
- * null and lib/leetcode.ts falls back to the live API.
+ * Supabase access for the persisted `problems` table (read-only via anon key;
+ * the daily sync in supabase/functions/sync-problems keeps it fresh) and, for
+ * signed-in course users, the Supabase Auth session. When the env vars are
+ * absent (e.g. a fresh local checkout) the client is null and lib/leetcode.ts
+ * falls back to the live API.
  */
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 // Accept either the new-style publishable key (sb_publishable_…) or the legacy
@@ -23,7 +23,11 @@ const ANON_KEY =
 
 let client: SupabaseClient | null = null;
 if (URL && ANON_KEY) {
-  client = createClient(URL, ANON_KEY, { auth: { persistSession: false } });
+  // Sessions persist for the hidden course beta (providers/AuthProvider.tsx).
+  // Anonymous visitors never create one, so nothing changes for public usage.
+  client = createClient(URL, ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true },
+  });
 }
 
 export const supabaseEnabled = client != null;

@@ -10,7 +10,11 @@ import {
   MonacoYjsBinding,
 } from "@/lib/monacoYjsBinding";
 import type { SaveStatus } from "@/hooks/useCodeDraft";
-import { useRunPython } from "@/hooks/useRunPython";
+import {
+  parseTestSummary,
+  useRunPython,
+  type TestSummary,
+} from "@/hooks/useRunPython";
 import { useRunJava } from "@/hooks/useRunJava";
 import { useRunJavaScript } from "@/hooks/useRunJavaScript";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -55,6 +59,14 @@ interface MonacoNamespace {
 const FONT_MIN = 11;
 const FONT_MAX = 22;
 const FONT_DEFAULT = 14;
+
+/** What a finished run looked like, for callers that score runs (courses). */
+export interface RunResult {
+  summary: TestSummary | null;
+  durationMs: number | null;
+  langId: string;
+  status: "done" | "error";
+}
 
 // Syntax themes per DESIGN.md: desaturated Google hues for long-session comfort
 // (keywords blue, strings green, numbers/constants red, comments grey).
@@ -127,6 +139,7 @@ export function CodeEditor({
   status,
   lastSavedAt,
   collab = null,
+  onRunResult,
 }: {
   langId: string;
   code: string;
@@ -141,6 +154,12 @@ export function CodeEditor({
    * bypassed), the language is locked, and Reset is hidden.
    */
   collab?: { ytext: Y.Text; awareness: Awareness } | null;
+  /**
+   * Called once per run when it finishes (done or error), with the parsed
+   * test summary and measured duration. Used by the course feature to score
+   * runs; absent for public usage, where nothing changes.
+   */
+  onRunResult?: (result: RunResult) => void;
 }) {
   const lang = languageById(langId);
   const isDark = useIsDark();
@@ -178,12 +197,33 @@ export function CodeEditor({
   const {
     status: runStatus,
     output,
+    durationMs,
     isBusy,
     run,
     cancel,
     clear,
   } = isJava ? javaRunner : isJs ? jsRunner : pyRunner;
   const [consoleOpen, setConsoleOpen] = useState(false);
+
+  // Report each finished run exactly once (a prev-status ref guards against
+  // re-fires from unrelated re-renders). Cancel resets to "idle", which never
+  // reports — only genuine done/error transitions do.
+  const onRunResultRef = useRef(onRunResult);
+  onRunResultRef.current = onRunResult;
+  const prevRunStatusRef = useRef(runStatus);
+  useEffect(() => {
+    const prev = prevRunStatusRef.current;
+    prevRunStatusRef.current = runStatus;
+    if (runStatus === prev) return;
+    if (runStatus !== "done" && runStatus !== "error") return;
+    if (prev !== "running" && prev !== "loading-runtime") return;
+    onRunResultRef.current?.({
+      summary: parseTestSummary(output),
+      durationMs,
+      langId,
+      status: runStatus,
+    });
+  }, [runStatus, output, durationMs, langId]);
 
   // Editor view preferences, persisted across problems (localStorage).
   const [fontSize, setFontSize] = useLocalStorage(

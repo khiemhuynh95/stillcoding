@@ -352,8 +352,93 @@ Update this file after every meaningful implementation change.
   custom id like `C4` is findable when typed (was a case bug — query lowercased
   but `frontend_id` wasn't).
 
+- **Course feature (hidden beta)** — sponsored LeetCoding course: auth,
+  courses/weeks, per-course points, member-only leaderboards. Built across
+  the planned phases in one pass; `tsc --noEmit` + `npm run build` green.
+  - **DB (`20260704000001_course.sql`)**: `profiles` (auto-created by an
+    `auth.users` insert trigger; `is_admin` set manually), `courses` (unique
+    8-char `join_code`, nullable `start_date`/`end_date` timeline),
+    `course_members` (role admin|member), `course_invites` (email rows, no
+    email sent; redeemed by the trigger at registration or `redeem_invites()`
+    on sign-in), `course_weeks` + `course_problems` (ordered slugs per week),
+    `problem_progress` (PK user+course+slug — per-course scoring; rows survive
+    leave/rejoin), `course_leaderboard` view (security_invoker). First
+    `auth.uid()` RLS in the project: member-only reads, admin-only writes via
+    security-definer helpers (`is_course_member`/`is_course_admin`/
+    `is_app_admin` — no policy recursion); privileged transitions are RPCs
+    (`create_course`, `join_course`). `problem_progress` has no client write
+    policy at all.
+  - **Scoring (`20260704000002_course_scoring.sql`)**: `record_run(course,
+    slug, passed, exec_ms)` RPC — membership + course-content + timeline
+    checks server-side; counts failed attempts; on the first pass freezes
+    `points = base(100/200/300 by difficulty) × max(0.30, 1 − 0.10·fails) +
+    base × 0.10 × clamp((15000−ms)/13000)`. Later runs never change a frozen
+    score. Runs outside the timeline are silent no-ops.
+  - **Client**: shared supabase client now `persistSession: true` (no-op for
+    anon visitors); `providers/AuthProvider.tsx` (`useAuth()`: session +
+    profile + redeem_invites on sign-in) wraps the app in layout.tsx. Unlisted
+    `/course/login` (sign-in / register + optional join code). Route group
+    `app/course/(member)/` gated client-side: dashboard (course switcher +
+    join/leave/create), `[id]` (weeks + per-problem progress + timeline
+    state), `[id]/manage` (admin tabs: Weeks with catalog ProblemPicker /
+    Members + invites / Settings incl. timeline), `[id]/leaderboard`. Data
+    layer `lib/course.ts` + `hooks/useCourses.ts` (TanStack, `["course",…]`
+    keys); components in `components/course/`.
+  - **Run pipeline**: all three runners now expose `durationMs` (python:
+    execution phase only; java: includes Wandbox round-trip — beta caveat);
+    `CodeEditor` gained an optional `onRunResult` prop (fires once per
+    finished run with `parseTestSummary` + duration; absent = public behavior
+    unchanged). `hooks/useCourseRun.ts` activates only for signed-in members
+    on `/problems/[slug]?course=<id>` when the course contains the slug:
+    pass = summary with 0 failures → `record_run`; error/failed tests →
+    failed attempt; plain prints ignored. `PointsToast` celebrates the first
+    completion. Public solved-map/localStorage behavior untouched.
+  - **App admins see all courses (`20260704000003_admin_all_courses.sql`)** —
+    `is_course_member`/`is_course_admin` gained an `is_app_admin()` bypass, so
+    app admins browse + manage every course with no membership rows to keep in
+    sync. Deliberately not bypassed: `record_run` (needs real membership to
+    earn points) and the leaderboard view (driven by `course_members`), so
+    non-participating admins stay off standings. Client: `Course.enrolled`
+    flag; `fetchMyCourses(userId, isAppAdmin)` merges "all courses" for
+    admins (dashboard shows "All courses", unenrolled cards say
+    "Not enrolled" instead of Leave); `fetchCourse` returns `myRole:'admin'`
+    for unenrolled app admins so the Manage page opens everywhere.
+  - **"My Courses" nav for signed-in users** — `TopNav` (desktop links) and
+    `MobileNav` (bottom bar, `school` icon) conditionally append a `/course`
+    entry when a session exists, via `useAuth()`. Anonymous visitors never see
+    it, preserving the unlisted-beta constraint; the public NAV_LINKS are
+    otherwise untouched. TopNav also shows a **profile chip** (account icon +
+    display name → `/course/profile`) on every page for signed-in users —
+    including the public home page — rendered between the page `actions` and
+    the theme toggle; the course dashboard's own duplicate chip was removed.
+  - **Password reset + profile page** — login page gained "Forgot password?"
+    (`resetPasswordForEmail` → recovery email → unlisted
+    `/course/reset-password` page which sets the new password via
+    `auth.updateUser`; supabase-js turns the emailed link into a recovery
+    session automatically). New `/course/profile` (gated): shows the sign-in
+    email, edits `profiles.display_name` (the name rosters/leaderboards show —
+    allowed by the column-level grant), and changes the password in-app (no
+    email round-trip while signed in). AuthProvider gained
+    `resetPassword`/`updatePassword`/`updateDisplayName`; the dashboard name
+    chip links to the profile. **Caveat:** recovery emails use Supabase's
+    built-in mailer (no custom SMTP) — fine for occasional resets, rate-limited
+    for bulk. **Manual step:** add `/course/reset-password` (localhost + prod
+    origins) to Auth → URL Configuration → Redirect URLs.
+  - **Join-code URLs** — course routes carry the short shareable join code
+    (`/course/ccce8de0`, also in `?course=` on problem pages) instead of the
+    uuid. `fetchCourse` accepts code **or** uuid (old links keep working);
+    pages resolve the course first and feed the uuid to child queries and
+    `record_run`. Sharing a course URL doubles as sharing the Course ID.
+  - **Manual steps before it works**: `supabase db push` (both migrations);
+    create the first admin user in the dashboard and
+    `update public.profiles set is_admin = true where id = '<uid>'`;
+    consider disabling "Confirm email" (no SMTP configured). Course problem
+    lists to be provided later and entered via the manage UI.
+
 ## Next Up
 
+- Feed the real course problem lists into a course via the manage UI
+  (user will provide the lists).
 - Continue roadmap / practice topic coverage.
 - Continue problem rewording batches.
 
@@ -362,9 +447,11 @@ Update this file after every meaningful implementation change.
 - None blocking. Future extension points (not committed): extending the Java
   starter+test backfill beyond the curated lists to the full catalog tail
   (Phase 2, same transpiler); more runnable languages (the Wandbox runner is
-  language-agnostic — js/ts/cpp/go are easy adds); user accounts + cross-device
-  sync; graduating custom problems to Supabase. (Python runs in-browser via
-  Pyodide; Java compiles + runs server-side via Wandbox.)
+  language-agnostic — js/ts/cpp/go are easy adds); cross-device sync of
+  *public* practice state (accounts now exist for the course beta only); a
+  server-side judge to replace the client-trusted run outcomes in course
+  scoring. (Python runs in-browser via Pyodide; Java compiles + runs
+  server-side via Wandbox.)
 
 ## Architecture Decisions
 
@@ -397,6 +484,17 @@ Update this file after every meaningful implementation change.
   mis-resolves bare numbers as frontend ids and returns the wrong
   problem; "has detail" = `detail_synced_at != null`.
 - **React 18.3 over 19** — clean Monaco / panels peer deps.
+- **Course beta: client-trusted run outcomes, server-owned scoring
+  (2026-07-04)** — there is still no server judge, so the client reports
+  what a run did (pass/fail from the unittest-style report + measured
+  duration), but the `record_run` RPC owns attempts, the timeline check,
+  and the points formula, and `problem_progress` has no client write
+  path. Per-course progress (PK user+course+slug) was chosen over global
+  so a problem counts in each course the user tackles it from (the
+  `?course=` context decides attribution). Session persistence flipped on
+  for the shared client — anon visitors never create a session, and all
+  pre-existing policies already covered `authenticated`, so the public
+  app is unaffected.
 
 ## Session Notes
 

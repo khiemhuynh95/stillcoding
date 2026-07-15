@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { storageKeys } from "@/lib/storage";
+import { useAuth } from "@/providers/AuthProvider";
 import { cn } from "@/lib/utils";
 
 /** Shared top navigation bar. Pages pass their own right-side `actions`. */
@@ -15,6 +16,12 @@ const NAV_LINKS = [
 
 export function TopNav({ actions }: { actions?: ReactNode }) {
   const pathname = usePathname();
+  const { session, profile } = useAuth();
+  // The course area is an unlisted beta: the nav entry appears only for
+  // signed-in users, so the public app never links to it.
+  const navLinks = session
+    ? [...NAV_LINKS, { href: "/course", label: "My Courses" }]
+    : NAV_LINKS;
   const [theme, setTheme, hydrated] = useLocalStorage<"light" | "dark">(
     storageKeys.theme,
     "light",
@@ -38,7 +45,7 @@ export function TopNav({ actions }: { actions?: ReactNode }) {
           StillCoding
         </Link>
         <nav className="hidden md:flex gap-1 items-center h-14">
-          {NAV_LINKS.map((item) => {
+          {navLinks.map((item) => {
             const active =
               item.href === "/"
                 ? pathname === "/" || pathname.startsWith("/problems")
@@ -62,6 +69,21 @@ export function TopNav({ actions }: { actions?: ReactNode }) {
       </div>
       <div className="flex items-center gap-2 pr-1">
         {actions}
+        {/* Signed-in course users: profile chip (display name → profile page). */}
+        {session && (
+          <Link
+            href="/course/profile"
+            title="Your profile"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-full text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              account_circle
+            </span>
+            <span className="hidden sm:inline max-w-32 truncate">
+              {profile?.displayName}
+            </span>
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

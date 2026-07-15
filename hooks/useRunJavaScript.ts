@@ -27,8 +27,11 @@ export function useRunJavaScript() {
   const workerRef = useRef<Worker | null>(null);
   const runIdRef = useRef(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startedAtRef = useRef<number | null>(null);
   const [status, setStatus] = useState<RunStatus>("idle");
   const [output, setOutput] = useState<OutputLine[]>([]);
+  // Wall-clock of the last finished run; null while running / before a run.
+  const [durationMs, setDurationMs] = useState<number | null>(null);
 
   const clearTimer = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -67,6 +70,8 @@ export function useRunJavaScript() {
       terminate();
       setOutput([]);
       setStatus("running");
+      setDurationMs(null);
+      startedAtRef.current = performance.now();
 
       let worker: Worker;
       try {
@@ -115,6 +120,9 @@ export function useRunJavaScript() {
             break;
           case "done":
             clearTimer();
+            if (startedAtRef.current != null) {
+              setDurationMs(Math.round(performance.now() - startedAtRef.current));
+            }
             setStatus((s) => (s === "error" ? s : msg.ok ? "done" : "error"));
             break;
         }
@@ -145,5 +153,5 @@ export function useRunJavaScript() {
 
   const isBusy = status === "running";
 
-  return { status, output, isBusy, run, cancel, clear };
+  return { status, output, durationMs, isBusy, run, cancel, clear };
 }

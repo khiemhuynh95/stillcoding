@@ -60,10 +60,24 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 - **In-code (version-controlled)**: preset lists, roadmap, practice
   content, starter templates. Merged in the app layer; never written to
   Supabase. (Custom problems were here previously; now DB-backed.)
-- **localStorage (`devstudio:` prefix)**: all user state — filters,
-  solved/attempted status, per-(problem,language) code drafts,
+- **localStorage (`devstudio:` prefix)**: all *public* user state —
+  filters, solved/attempted status, per-(problem,language) code drafts,
   user-created lists, selected language, theme, per-problem countdown
-  timer (`timer:<slug>`). Not synced anywhere.
+  timer (`timer:<slug>`). Not synced anywhere. (The supabase-js session
+  for signed-in course users also lives in localStorage, managed by the
+  library.)
+- **Supabase course tables (hidden beta, signed-in only)**: `profiles`,
+  `courses` (join code + start/end timeline), `course_members`,
+  `course_invites`, `course_weeks`, `course_problems` (ordered slugs per
+  week), `problem_progress` (per user+course+problem: failed-attempt
+  counter, then frozen `points`/`exec_ms`/`completed_at`), and the
+  `course_leaderboard` view (security_invoker). Course content is
+  member-only via `auth.uid()` RLS; `problem_progress` has **no client
+  write path** — scoring goes through the `record_run` RPC, which owns
+  the points formula (difficulty base − attempt penalty + speed bonus)
+  and the timeline check. Progress rows survive leave/rejoin. Course
+  activity is the only user state persisted server-side; drafts,
+  filters, theme, timers, and the public solved-map stay localStorage.
 - **Supabase `collab_sessions` (client-writable)**: the one table the
   app writes to. Holds a shared code buffer for live co-editing — id
   (unguessable), slug, language, a base64 Yjs snapshot (`doc`),
@@ -85,17 +99,40 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 
 ## Auth and Access Model
 
-- **No user auth.** There are no accounts; every visitor is anonymous
-  and all personal state lives in their browser's localStorage.
-- Supabase access is read-only via the publishable/anon key
+- **The public app has no user auth.** Anonymous visitors have no
+  accounts and all their personal state lives in localStorage, exactly
+  as before.
+- **Hidden course beta (the one auth surface)**: Supabase Auth
+  email/password behind the unlisted `/course/login` page (no public
+  links). The shared client persists the session
+  (`persistSession: true` — a no-op for anonymous visitors, who never
+  create one). `providers/AuthProvider.tsx` exposes
+  `useAuth()` (session + `profiles` row); `app/course/(member)/layout.tsx`
+  client-gates the course area. No middleware / `@supabase/ssr`.
+- **Roles**: `profiles.is_admin` (set manually in the Supabase
+  dashboard) gates course creation **and grants visibility/management
+  of every course**: the RLS helpers `is_course_member` /
+  `is_course_admin` include an `is_app_admin()` bypass, so app admins
+  see and manage all courses without materialized membership rows.
+  They still don't earn points or appear on leaderboards unless they
+  actually join (`record_run` and the leaderboard view key off real
+  `course_members` rows). Per-course roles live in
+  `course_members.role` (`admin`|`member`). Course content is
+  otherwise member-only via `auth.uid()` RLS through those
+  security-definer helpers.
+  Privileged transitions are security-definer RPCs only:
+  `create_course`, `join_course`, `redeem_invites`, `record_run`.
+  Invites are DB rows redeemed by the `auth.users` insert trigger or
+  on sign-in — no email sending.
+- Supabase catalog access stays read-only via the publishable/anon key
   (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or legacy
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY`); RLS forbids client writes.
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`); RLS forbids client catalog writes.
 - Catalog writes happen only offline, via the Edge Function running
   under the service role. The `SUPABASE_SERVICE_ROLE_KEY` is never
   exposed to the app / Vercel.
-- **One scoped client-write exception**: the collaboration feature
+- **One anon client-write exception**: the collaboration feature
   lets the anon client `insert`/`select`/`update` `collab_sessions`
-  (and nothing else). Still no accounts — collaborators are anonymous,
+  (and nothing else). Collaborators stay anonymous,
   identified by an ephemeral display name + color held in localStorage.
   Collaboration requires Supabase env vars; when unset, the feature is
   simply hidden and the rest of the app runs keyless as before.
@@ -108,9 +145,11 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
    from Supabase (LeetCode or `source='custom'` rows) or the live API.
 2. Every catalog read path falls back to the live API on
    absence/empty/error, so the app runs with **zero env vars set**.
-3. All user state is localStorage-only and namespaced with the
+3. All *public* user state is localStorage-only and namespaced with the
    `devstudio:` prefix — go through `lib/storage.ts`, never touch
-   `localStorage` directly.
+   `localStorage` directly. Signed-in **course activity** (enrollment,
+   attempts, completions, points) is the deliberate exception: it
+   persists to Supabase through `lib/course.ts` only.
 4. Problem HTML is **always** sanitized (`lib/sanitize.ts`) before
    render — never `dangerouslySetInnerHTML` raw API/DB content.
 5. Code execution is **Run-only, no judge** and limited to three
@@ -128,8 +167,17 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 7. Supabase detail is fetched by `title_slug`, never numeric id (the
    API mis-resolves bare numbers as frontend ids); "has detail" means
    `detail_synced_at != null`, not `content != null`.
-8. The **only** client write path is `collab_sessions`; every catalog
-   table (`problems`, `tags`, `sync_runs`) stays anon read-only. User
-   practice state (drafts, solved status, lists) stays localStorage-only
-   and is never written to Supabase — a collab session is a separate,
-   ephemeral, opt-in document.
+8. The **only anon** client write path is `collab_sessions`; every
+   catalog table (`problems`, `tags`, `sync_runs`) stays anon read-only.
+   Signed-in course users additionally write course tables under
+   member/admin RLS, and `problem_progress` only via the `record_run`
+   RPC. Public practice state (drafts, solved status, lists) stays
+   localStorage-only and is never written to Supabase — a collab
+   session is a separate, ephemeral, opt-in document.
+9. **Course reads/writes go through `lib/course.ts`** (and the hooks in
+   `hooks/useCourses.ts`); components never call Supabase directly.
+   The points formula lives **only** in the `record_run` RPC — the
+   client reports what a run did (pass/fail + measured duration), never
+   computes points. Trust model accepted for the beta: the client is
+   trusted about run outcomes (no server judge), but not about
+   attempts, points, membership, or the course timeline.

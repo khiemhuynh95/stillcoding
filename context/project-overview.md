@@ -107,6 +107,29 @@ review) layered on top of raw LeetCode data.
   (anyone can start / pause / reset / change the minutes, synced to
   everyone). Same control either way.
 
+### Courses (hidden beta)
+
+- StillCoding sponsors a LeetCoding course: an **unlisted** area under
+  `/course/*` (nothing in the public app links to it; participants get
+  the URL from an admin). Supabase Auth email/password behind
+  `/course/login`.
+- App admins (created in the Supabase dashboard, `profiles.is_admin`)
+  create courses; course admins organize catalog problems into
+  **weeks**, set a course **timeline** (start → end date), and manage
+  people (email invites — no email sent, redeemed automatically at
+  registration/sign-in — plus a shareable join code; regular users can
+  join, leave, and rejoin anytime; progress survives leave/rejoin).
+- Members earn **points per course** on the *first* run where all tests
+  pass (client-detected from the unittest-style report; runnable
+  languages only): difficulty base (100/200/300) − 10%/failed attempt
+  (floor 30%) + up to 10% speed bonus from measured execution time,
+  computed server-side in the `record_run` RPC. Points only count
+  inside the course timeline. Per-course **leaderboard** (points +
+  solved), visible to that course's members.
+- Course activity (enrollment, attempts, completions, points) persists
+  to Supabase; everything else stays localStorage. Public/anonymous
+  usage is unchanged.
+
 ### Extras
 
 - Light/dark theme (restored before first paint, no flash).
@@ -134,10 +157,12 @@ review) layered on top of raw LeetCode data.
   remain editor-only.
 - Per-problem real function signatures / starter templates from the
   API (it exposes none — generic scaffolds are used).
-- User accounts / auth / cross-device sync of user state (drafts,
+- User accounts / cross-device sync **for the public app** (drafts,
   solved status, and user lists are not synced to Supabase).
-  Collaboration is the one shared-state feature, but it is a separate,
-  ephemeral, opt-in document — not a sync of the user's local state.
+  Collaboration is the anonymous shared-state feature — a separate,
+  ephemeral, opt-in document, not a sync of the user's local state.
+  (The hidden course beta has accounts, but only course activity is
+  server-side; it does not sync public practice state.)
 - Acceptance rate / per-row tags in the browse table (not in the
   list endpoint; kept off the table for speed).
 

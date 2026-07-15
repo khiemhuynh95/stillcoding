@@ -82,3 +82,85 @@ export interface GlobalStats {
   with_solution: number;
   with_video_solution: number;
 }
+
+// ---------------------------------------------------------------------------
+// Course feature (hidden beta) — normalized UI shapes. Snake_case DB rows are
+// mapped to these at the boundary in lib/course.ts.
+// ---------------------------------------------------------------------------
+
+export type CourseRole = "admin" | "member";
+
+/** One row per auth user (public.profiles). */
+export interface Profile {
+  id: string;
+  displayName: string;
+  /** Global flag: may create courses. Set manually in the Supabase dashboard. */
+  isAdmin: boolean;
+}
+
+export interface Course {
+  id: string;
+  name: string;
+  description: string;
+  /** Human-shareable join code (the "course id" users type to enroll). */
+  joinCode: string;
+  /** Course timeline (ISO dates, null = unbounded). Points only count inside it. */
+  startDate: string | null;
+  endDate: string | null;
+  /** The signed-in user's role in this course (app admins are 'admin' everywhere). */
+  myRole: CourseRole;
+  /**
+   * True when the user has an actual course_members row. App admins can see
+   * and manage every course, but only enrolled users earn points / appear on
+   * the leaderboard / can leave.
+   */
+  enrolled: boolean;
+}
+
+export interface CourseProblemRef {
+  id: string;
+  weekId: string;
+  titleSlug: string;
+  position: number;
+}
+
+export interface CourseWeek {
+  id: string;
+  courseId: string;
+  title: string;
+  position: number;
+  /** Ordered problems, parallel to ProblemList.slugs. */
+  problems: CourseProblemRef[];
+}
+
+export interface CourseMember {
+  courseId: string;
+  userId: string;
+  role: CourseRole;
+  displayName: string;
+}
+
+export interface CourseInvite {
+  id: string;
+  courseId: string;
+  email: string;
+  role: CourseRole;
+  redeemedAt: string | null;
+}
+
+/** Per (user, course, problem) progress; score frozen at first passing run. */
+export interface ProblemProgress {
+  courseId: string;
+  titleSlug: string;
+  failedAttempts: number;
+  completedAt: string | null;
+  points: number | null;
+  execMs: number | null;
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  displayName: string;
+  points: number;
+  solved: number;
+}

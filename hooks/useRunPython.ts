@@ -105,8 +105,12 @@ export function useRunPython() {
   const workerRef = useRef<Worker | null>(null);
   const runIdRef = useRef(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startedAtRef = useRef<number | null>(null);
   const [status, setStatus] = useState<RunStatus>("idle");
   const [output, setOutput] = useState<OutputLine[]>([]);
+  // Wall-clock of the last finished run's *execution* phase (excludes the
+  // runtime download); null while running or before the first run.
+  const [durationMs, setDurationMs] = useState<number | null>(null);
 
   const clearTimer = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -146,6 +150,8 @@ export function useRunPython() {
       terminate();
       setOutput([]);
       setStatus("loading-runtime");
+      setDurationMs(null);
+      startedAtRef.current = null;
 
       // Worker construction can throw synchronously (SecurityError, blocked URL).
       // Catch it so the caller never throws — otherwise React discards the
@@ -177,6 +183,7 @@ export function useRunPython() {
             if (msg.status) setStatus(msg.status);
             // Only time the execution phase, not the (first-run) runtime download.
             if (msg.status === "running") {
+              startedAtRef.current = performance.now();
               timeoutRef.current = setTimeout(() => {
                 terminate();
                 append({
@@ -199,6 +206,9 @@ export function useRunPython() {
             break;
           case "done":
             clearTimer();
+            if (startedAtRef.current != null) {
+              setDurationMs(Math.round(performance.now() - startedAtRef.current));
+            }
             setStatus((s) => (s === "error" ? s : "done"));
             break;
         }
@@ -229,5 +239,5 @@ export function useRunPython() {
 
   const isBusy = status === "loading-runtime" || status === "running";
 
-  return { status, output, isBusy, run, cancel, clear };
+  return { status, output, durationMs, isBusy, run, cancel, clear };
 }

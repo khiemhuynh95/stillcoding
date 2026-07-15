@@ -12,10 +12,12 @@ import { SaveToList } from "@/components/coding/SaveToList";
 import { ShareButton } from "@/components/coding/ShareButton";
 import { SessionTimer } from "@/components/coding/SessionTimer";
 import { BrownNoise } from "@/components/coding/BrownNoise";
+import { PointsToast } from "@/components/course/PointsToast";
 import { useProblem } from "@/hooks/useProblems";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useCodeDraft } from "@/hooks/useCodeDraft";
 import { useCollabSession } from "@/hooks/useCollabSession";
+import { useCourseRun } from "@/hooks/useCourseRun";
 import { useEditorTimer } from "@/hooks/useEditorTimer";
 import { useSolvedStatus } from "@/hooks/useSolvedStatus";
 import { collabEnabled } from "@/lib/collab";
@@ -40,6 +42,10 @@ function CodingPage() {
   const slug = String(params?.slug ?? "");
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session");
+  // Course context: the join code, set when the user navigated here from a
+  // course page — finished runs are then reported for scoring (members only).
+  const courseCode = searchParams.get("course");
+  const courseRun = useCourseRun(slug, courseCode);
   const router = useRouter();
 
   const collab = useCollabSession(sessionId);
@@ -108,6 +114,16 @@ function CodingPage() {
 
   const actions = (
     <div className="flex items-center gap-2">
+      {courseRun.active && courseCode && (
+        <Link
+          href={`/course/${courseCode}`}
+          title="Back to your course"
+          className="flex items-center gap-1 px-2 text-label-md font-label-md text-on-surface-variant hover:text-on-surface transition-colors"
+        >
+          <span className="material-symbols-outlined text-[18px]">school</span>
+          <span className="hidden sm:inline">Course</span>
+        </Link>
+      )}
       {!sessionId && (
         <span
           className="flex items-center gap-1 px-2 text-label-md text-on-surface-variant"
@@ -205,12 +221,19 @@ function CodingPage() {
                       ? { ytext: collab.ytext, awareness: collab.awareness }
                       : null
                   }
+                  onRunResult={
+                    courseRun.active ? courseRun.reportRun : undefined
+                  }
                 />
               )}
             </Panel>
           </PanelGroup>
         )}
       </main>
+      <PointsToast
+        completion={courseRun.lastCompletion}
+        onDismiss={courseRun.dismissCompletion}
+      />
       <Footer />
     </div>
   );
