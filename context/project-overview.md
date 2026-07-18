@@ -119,16 +119,22 @@ review) layered on top of raw LeetCode data.
   people (email invites — no email sent, redeemed automatically at
   registration/sign-in — plus a shareable join code; regular users can
   join, leave, and rejoin anytime; progress survives leave/rejoin).
-- Members earn **points per course** on the *first* run where all tests
-  pass (client-detected from the unittest-style report; runnable
-  languages only): difficulty base (100/200/300) − 10%/failed attempt
-  (floor 30%) + up to 10% speed bonus from measured execution time,
-  computed server-side in the `record_run` RPC. Points only count
-  inside the course timeline. Per-course **leaderboard** (points +
-  solved), visible to that course's members.
-- Course activity (enrollment, attempts, completions, points) persists
-  to Supabase; everything else stays localStorage. Public/anonymous
-  usage is unchanged.
+- Signed-in users get two editor actions: **Run** (executes the tests,
+  free — in a course it only counts toward a run metric) and **Submit**
+  (runs the tests and saves the code + test result to the DB).
+- Members earn **points per course** on the *first successful
+  submission* per problem (client-detected from the unittest-style
+  report; runnable languages only): difficulty base (100/200/300) ×
+  a time factor that decays linearly from 1.0 at course start to 0.30
+  at course end (earlier success scores more) − 10% of base per failed
+  submit, floored at 30% of base. Computed server-side in the
+  `record_submission` RPC; later successful submits never change the
+  frozen score, and runs never penalize. Points only count inside the
+  course timeline. Per-course **leaderboard** (points + solved),
+  visible to that course's members.
+- Course activity (enrollment, submissions with code, run/submit
+  counts, completions, points) persists to Supabase; everything else
+  stays localStorage. Public/anonymous usage is unchanged.
 
 ### Extras
 
@@ -151,10 +157,10 @@ review) layered on top of raw LeetCode data.
 
 ### Out of Scope
 
-- Submission / judging (no grader). Run-only code execution exists for
-  Python (in-browser Pyodide), JavaScript (in-browser Web Worker), and
-  Java (server-side via the public Wandbox API); the other languages
-  remain editor-only.
+- A server-side judge (test outcomes are client-detected and trusted).
+  Code execution exists for Python (in-browser Pyodide), JavaScript
+  (in-browser Web Worker), and Java (server-side via the public
+  Wandbox API); the other languages remain editor-only.
 - Per-problem real function signatures / starter templates from the
   API (it exposes none — generic scaffolds are used).
 - User accounts / cross-device sync **for the public app** (drafts,

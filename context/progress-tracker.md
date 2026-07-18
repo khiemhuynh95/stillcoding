@@ -465,6 +465,41 @@ Update this file after every meaningful implementation change.
   - **Manual step:** `supabase db push` (or run the migration SQL in
     the dashboard editor) — the CLI isn't linked in this environment.
 
+- **Simplified grading: Run vs Submit (2026-07-17)** — replaced the
+  run-based scoring (`record_run`, speed bonus) with a submission-based
+  model. Run = execute tests, free (course context only bumps a
+  `run_count` metric). Submit = run tests + save code + test result;
+  the only action that can score.
+  - **DB (`20260717000001_submissions_grading.sql`)**:
+    `problem_progress` — `failed_attempts` → `failed_submits`, dropped
+    `exec_ms`, added `run_count`/`submit_count`. New `submissions`
+    table (user, nullable course, slug, lang, code, test counts,
+    passed, created_at; select for owner or course admin, writes only
+    via RPC). New RPCs: `record_test_run(course, slug)` (run metric)
+    and `record_submission(slug, lang, code, counts, passed, course?)`
+    — saves the submission (soft-fails bad course context to a
+    practice submit with `course_id = null` so the code row is never
+    rolled back), bumps `submit_count`, counts `failed_submits` inside
+    the timeline, and on the first pass freezes
+    `points = round(base × max(0.30, tf − 0.10·failed_submits))` with
+    `tf` decaying linearly 1.0 → 0.30 across start_date→end_date
+    (missing/degenerate dates → 1.0). `completed_at` = first successful
+    submission timestamp; server clock only. Old `record_run` dropped —
+    **deploy migration + frontend together**; old frozen points kept.
+  - **Client**: `CodeEditor` gained a primary **Submit** button
+    (`onSubmit` prop; rendered when set, i.e. signed-in) sharing the
+    run pipeline — `pendingSubmitRef` routes the finish effect to
+    `onSubmit` with the exact submitted source (`SubmitResult =
+    RunResult + code`); cancel clears it. `useCourseRun`: `reportRun`
+    is now fire-and-forget `recordTestRun`; new `reportSubmission`
+    classifies pass/fail and calls `recordSubmission` (practice submit
+    when not in an active course), invalidates progress/leaderboard,
+    toasts first completion. `lib/course.ts` + types renamed to
+    `failedSubmits`/`runCount`/`submitCount` (no `execMs`);
+    PointsToast/ProgressBadge wording updated. Leaderboard unchanged.
+  - **Manual step:** `supabase db push` (or run the migration in the
+    dashboard SQL editor).
+
 ## Next Up
 
 - Feed the real course problem lists into a course via the manage UI

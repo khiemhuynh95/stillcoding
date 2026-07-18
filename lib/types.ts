@@ -150,14 +150,19 @@ export interface CourseInvite {
   redeemedAt: string | null;
 }
 
-/** Per (user, course, problem) progress; score frozen at first passing run. */
+/**
+ * Per (user, course, problem) progress; score frozen at the first successful
+ * submission (`completedAt` is its timestamp). Runs are free metrics; only
+ * failed submits penalize.
+ */
 export interface ProblemProgress {
   courseId: string;
   titleSlug: string;
-  failedAttempts: number;
+  failedSubmits: number;
+  runCount: number;
+  submitCount: number;
   completedAt: string | null;
   points: number | null;
-  execMs: number | null;
 }
 
 export interface LeaderboardEntry {

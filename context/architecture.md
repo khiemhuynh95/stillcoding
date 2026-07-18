@@ -71,12 +71,17 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
   `course_invites`, `course_weeks` (title, position, and optional
   markdown `material` — admin-authored study notes rendered on
   `/course/[code]/week/[weekId]`), `course_problems` (ordered slugs per
-  week), `problem_progress` (per user+course+problem: failed-attempt
-  counter, then frozen `points`/`exec_ms`/`completed_at`), and the
+  week), `problem_progress` (per user+course+problem: `run_count` /
+  `submit_count` metrics, `failed_submits` counter, then frozen
+  `points`/`completed_at` — the first successful submission), the
+  `submissions` table (one row per Submit: code, language, test counts,
+  pass flag; readable by owner or course admin), and the
   `course_leaderboard` view (security_invoker). Course content is
-  member-only via `auth.uid()` RLS; `problem_progress` has **no client
-  write path** — scoring goes through the `record_run` RPC, which owns
-  the points formula (difficulty base − attempt penalty + speed bonus)
+  member-only via `auth.uid()` RLS; `problem_progress` and
+  `submissions` have **no client write path** — Run counting goes
+  through the `record_test_run` RPC and submitting/scoring through
+  `record_submission`, which owns the points formula (difficulty base ×
+  linear time decay over the course window − failed-submit penalty)
   and the timeline check. Progress rows survive leave/rejoin. Course
   activity is the only user state persisted server-side; drafts,
   filters, theme, timers, and the public solved-map stay localStorage.
@@ -117,13 +122,14 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
   `is_course_admin` include an `is_app_admin()` bypass, so app admins
   see and manage all courses without materialized membership rows.
   They still don't earn points or appear on leaderboards unless they
-  actually join (`record_run` and the leaderboard view key off real
+  actually join (the grading RPCs and the leaderboard view key off real
   `course_members` rows). Per-course roles live in
   `course_members.role` (`admin`|`member`). Course content is
   otherwise member-only via `auth.uid()` RLS through those
   security-definer helpers.
   Privileged transitions are security-definer RPCs only:
-  `create_course`, `join_course`, `redeem_invites`, `record_run`.
+  `create_course`, `join_course`, `redeem_invites`, `record_test_run`,
+  `record_submission`.
   Invites are DB rows redeemed by the `auth.users` insert trigger or
   on sign-in — no email sending.
 - Supabase catalog access stays read-only via the publishable/anon key
@@ -157,13 +163,17 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
    Markdown (course study material) renders only through
    `lib/markdown.ts` (`marked` → `sanitizeHtml`) — same invariant,
    markdown flavored.
-5. Code execution is **Run-only, no judge** and limited to three
+5. Code execution has **no server judge** and is limited to three
    languages: Python (Pyodide/WASM in a Web Worker) and JavaScript
    (native, in a Web Worker — `hooks/useRunJavaScript.ts`) run
    **client-side**; Java is compiled + run **server-side** via the
    public Wandbox API (`hooks/useRunJava.ts` — no key, user code leaves
    the browser). All other languages stay editor-only (draft autosave).
-   There is no Submit/grader — Run just executes the editor buffer.
+   Two actions share this run pipeline: **Run** just executes the
+   editor buffer (free; in a course it only bumps `run_count`), and
+   **Submit** (signed-in only) runs the same tests, then saves the code
+   + test result to `submissions` and is the only action that can score
+   points.
 6. Lists, roadmap, and practice are curated in code and resolve through
    the normal data layer — a slug missing from the catalog is silently
    skipped, never an error. Custom problems are now **DB rows**
@@ -175,14 +185,20 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
 8. The **only anon** client write path is `collab_sessions`; every
    catalog table (`problems`, `tags`, `sync_runs`) stays anon read-only.
    Signed-in course users additionally write course tables under
-   member/admin RLS, and `problem_progress` only via the `record_run`
-   RPC. Public practice state (drafts, solved status, lists) stays
+   member/admin RLS, and `problem_progress`/`submissions` only via the
+   `record_test_run`/`record_submission` RPCs. Public practice state
+   (drafts, solved status, lists) stays
    localStorage-only and is never written to Supabase — a collab
    session is a separate, ephemeral, opt-in document.
 9. **Course reads/writes go through `lib/course.ts`** (and the hooks in
    `hooks/useCourses.ts`); components never call Supabase directly.
-   The points formula lives **only** in the `record_run` RPC — the
-   client reports what a run did (pass/fail + measured duration), never
-   computes points. Trust model accepted for the beta: the client is
-   trusted about run outcomes (no server judge), but not about
-   attempts, points, membership, or the course timeline.
+   The points formula lives **only** in the `record_submission` RPC —
+   points = round(base × max(0.30, timeFactor − 0.10 × failed_submits)),
+   where base is 100/200/300 by difficulty and timeFactor decays
+   linearly from 1.0 at course start to 0.30 at course end. Frozen at
+   the first successful submission; later submits never change it; runs
+   never penalize. The client reports what a run produced (pass/fail +
+   test counts + the submitted code), never computes points or supplies
+   timestamps (server clock only). Trust model accepted for the beta:
+   the client is trusted about run outcomes (no server judge), but not
+   about counters, points, membership, or the course timeline.

@@ -1,6 +1,6 @@
 import type { ProblemProgress } from "@/lib/types";
 
-/** Per-problem course progress: frozen points, tries so far, or nothing. */
+/** Per-problem course progress: frozen points, failed submits so far, or nothing. */
 export function ProgressBadge({ progress }: { progress?: ProblemProgress }) {
   if (progress?.completedAt) {
     return (
@@ -12,11 +12,11 @@ export function ProgressBadge({ progress }: { progress?: ProblemProgress }) {
       </span>
     );
   }
-  if (progress && progress.failedAttempts > 0) {
+  if (progress && progress.failedSubmits > 0) {
     return (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-label-md font-label-md whitespace-nowrap">
-        {progress.failedAttempts}{" "}
-        {progress.failedAttempts === 1 ? "try" : "tries"}
+        {progress.failedSubmits}{" "}
+        {progress.failedSubmits === 1 ? "failed submit" : "failed submits"}
       </span>
     );
   }

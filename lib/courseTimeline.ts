@@ -3,7 +3,8 @@ import type { Course } from "./types";
 /**
  * Pure helpers for the course timeline (start_date → end_date, either side
  * nullable). Points only count inside the window — that rule is enforced
- * server-side by the record_run RPC; these helpers just drive the UI labels.
+ * server-side by the record_submission RPC; these helpers just drive the UI
+ * labels.
  */
 
 export type TimelineState = "upcoming" | "active" | "ended";

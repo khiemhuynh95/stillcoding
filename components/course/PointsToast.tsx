@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import type { ProblemProgress } from "@/lib/types";
 
-/** Celebration toast for the first passing run of a course problem. */
+/** Celebration toast for the first successful submission of a course problem. */
 export function PointsToast({
   completion,
   onDismiss,
@@ -29,9 +29,9 @@ export function PointsToast({
       </span>
       <span className="text-body-md">
         Solved! <span className="font-bold">+{completion.points} pts</span>
-        {completion.failedAttempts > 0 &&
-          ` after ${completion.failedAttempts} failed ${
-            completion.failedAttempts === 1 ? "attempt" : "attempts"
+        {completion.failedSubmits > 0 &&
+          ` after ${completion.failedSubmits} failed ${
+            completion.failedSubmits === 1 ? "submission" : "submissions"
           }`}
       </span>
       <button

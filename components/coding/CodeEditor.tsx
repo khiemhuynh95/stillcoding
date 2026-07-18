@@ -68,6 +68,11 @@ export interface RunResult {
   status: "done" | "error";
 }
 
+/** A finished Submit: the run result plus the exact source that was run. */
+export interface SubmitResult extends RunResult {
+  code: string;
+}
+
 // Syntax themes per DESIGN.md: desaturated Google hues for long-session comfort
 // (keywords blue, strings green, numbers/constants red, comments grey).
 function defineEditorThemes(monaco: {
@@ -140,6 +145,7 @@ export function CodeEditor({
   lastSavedAt,
   collab = null,
   onRunResult,
+  onSubmit,
 }: {
   langId: string;
   code: string;
@@ -160,6 +166,12 @@ export function CodeEditor({
    * runs; absent for public usage, where nothing changes.
    */
   onRunResult?: (result: RunResult) => void;
+  /**
+   * When set, a Submit button appears next to Run. Submit runs the tests like
+   * Run does, then reports the result together with the submitted source —
+   * the caller saves it and (in a course context) scores it.
+   */
+  onSubmit?: (result: SubmitResult) => void;
 }) {
   const lang = languageById(langId);
   const isDark = useIsDark();
@@ -207,22 +219,39 @@ export function CodeEditor({
 
   // Report each finished run exactly once (a prev-status ref guards against
   // re-fires from unrelated re-renders). Cancel resets to "idle", which never
-  // reports — only genuine done/error transitions do.
+  // reports — only genuine done/error transitions do. When the run was
+  // triggered by Submit, pendingSubmitRef holds the submitted source and the
+  // result goes to onSubmit instead of onRunResult.
   const onRunResultRef = useRef(onRunResult);
   onRunResultRef.current = onRunResult;
+  const onSubmitRef = useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
+  const pendingSubmitRef = useRef<string | null>(null);
   const prevRunStatusRef = useRef(runStatus);
   useEffect(() => {
     const prev = prevRunStatusRef.current;
     prevRunStatusRef.current = runStatus;
     if (runStatus === prev) return;
+    if (runStatus === "idle") {
+      // Cancelled — a pending submit must never report.
+      pendingSubmitRef.current = null;
+      return;
+    }
     if (runStatus !== "done" && runStatus !== "error") return;
     if (prev !== "running" && prev !== "loading-runtime") return;
-    onRunResultRef.current?.({
+    const result = {
       summary: parseTestSummary(output),
       durationMs,
       langId,
       status: runStatus,
-    });
+    };
+    const submittedCode = pendingSubmitRef.current;
+    pendingSubmitRef.current = null;
+    if (submittedCode != null) {
+      onSubmitRef.current?.({ ...result, code: submittedCode });
+    } else {
+      onRunResultRef.current?.(result);
+    }
   }, [runStatus, output, durationMs, langId]);
 
   // Editor view preferences, persisted across problems (localStorage).
@@ -236,11 +265,25 @@ export function CodeEditor({
   const handleRun = () => {
     if (!isRunnable) return;
     setConsoleOpen(true);
+    // A plain Run supersedes any not-yet-started submit intent.
+    pendingSubmitRef.current = null;
     // In collab mode the live buffer lives in the bound model, not `code`.
     const source = collabActive
       ? (editorRef.current?.getValue() ?? code)
       : code;
     // Defer so the console renders even if run() somehow throws synchronously.
+    setTimeout(() => run(source), 0);
+  };
+
+  // Submit = the same run pipeline, but the finish effect routes the result
+  // (with this exact source) to onSubmit. Disabled while a run is in flight.
+  const handleSubmit = () => {
+    if (!isRunnable || isBusy) return;
+    setConsoleOpen(true);
+    const source = collabActive
+      ? (editorRef.current?.getValue() ?? code)
+      : code;
+    pendingSubmitRef.current = source;
     setTimeout(() => run(source), 0);
   };
 
@@ -343,6 +386,24 @@ export function CodeEditor({
                 play_arrow
               </span>
               <span className="hidden sm:inline">Run</span>
+            </button>
+          )}
+          {onSubmit && (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!isRunnable || isBusy}
+              title={
+                isRunnable
+                  ? "Submit: run the tests and save your code + result"
+                  : "Submit supports Python, JavaScript, and Java"
+              }
+              className="flex items-center gap-1 rounded-full bg-primary text-on-primary px-3 py-1 hover:opacity-90 transition-opacity text-label-md font-label-md disabled:opacity-40 disabled:hover:opacity-40"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                cloud_upload
+              </span>
+              <span className="hidden sm:inline">Submit</span>
             </button>
           )}
           {!collabActive && (

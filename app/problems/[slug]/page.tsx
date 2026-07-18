@@ -21,6 +21,7 @@ import { useCourseRun } from "@/hooks/useCourseRun";
 import { useEditorTimer } from "@/hooks/useEditorTimer";
 import { useSolvedStatus } from "@/hooks/useSolvedStatus";
 import { collabEnabled } from "@/lib/collab";
+import { useAuth } from "@/providers/AuthProvider";
 import { storageGet, storageKeys, storageRemove, storageSet } from "@/lib/storage";
 import { DEFAULT_LANGUAGE, getStarterTemplate } from "@/lib/starterTemplates";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,9 @@ function CodingPage() {
   // course page — finished runs are then reported for scoring (members only).
   const courseCode = searchParams.get("course");
   const courseRun = useCourseRun(slug, courseCode);
+  // Submit needs a signed-in user (submissions are saved server-side); outside
+  // a course context it saves the code as a practice submit without scoring.
+  const { user } = useAuth();
   const router = useRouter();
 
   const collab = useCollabSession(sessionId);
@@ -224,6 +228,7 @@ function CodingPage() {
                   onRunResult={
                     courseRun.active ? courseRun.reportRun : undefined
                   }
+                  onSubmit={user ? courseRun.reportSubmission : undefined}
                 />
               )}
             </Panel>

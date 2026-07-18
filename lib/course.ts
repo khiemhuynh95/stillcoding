@@ -1,3 +1,4 @@
+import type { TestSummary } from "@/hooks/useRunPython";
 import { supabaseClient } from "./supabase";
 import type {
   Course,
@@ -15,7 +16,8 @@ import type {
  * through here — components use the hooks in hooks/useCourses.ts, never the
  * Supabase client directly. Everything requires a signed-in session; RLS keeps
  * course content member-only and privileged writes (create_course, join_course,
- * record_run, invite redemption) go through security-definer RPCs so the
+ * record_test_run, record_submission, invite redemption) go through
+ * security-definer RPCs so the
  * client can't self-elevate. Snake_case rows are normalized to the camelCase
  * shapes in lib/types.ts at this boundary.
  */
@@ -61,10 +63,11 @@ interface CourseWeekRow {
 interface ProgressRow {
   course_id: string;
   title_slug: string;
-  failed_attempts: number;
+  failed_submits: number;
+  run_count: number;
+  submit_count: number;
   completed_at: string | null;
   points: number | null;
-  exec_ms: number | null;
 }
 
 function rowToCourse(
@@ -111,10 +114,11 @@ function rowToProgress(r: ProgressRow): ProblemProgress {
   return {
     courseId: r.course_id,
     titleSlug: r.title_slug,
-    failedAttempts: r.failed_attempts,
+    failedSubmits: r.failed_submits,
+    runCount: r.run_count,
+    submitCount: r.submit_count,
     completedAt: r.completed_at,
     points: r.points,
-    execMs: r.exec_ms,
   };
 }
 
@@ -458,7 +462,9 @@ export async function fetchMyProgress(
   const client = requireClient();
   const { data, error } = await client
     .from("problem_progress")
-    .select("course_id, title_slug, failed_attempts, completed_at, points, exec_ms")
+    .select(
+      "course_id, title_slug, failed_submits, run_count, submit_count, completed_at, points",
+    )
     .eq("course_id", courseId)
     .eq("user_id", userId);
   if (error) throw new Error(`Progress read failed: ${error.message}`);
@@ -466,26 +472,53 @@ export async function fetchMyProgress(
 }
 
 /**
- * Report a finished run for scoring. The RPC (security definer) checks
- * membership + course content + the course timeline, counts failed attempts,
- * and computes/freezes points on the first passing run — the formula lives
- * server-side only. Returns the resulting progress row.
+ * Count a finished test run (course context only). Pure metric — the RPC
+ * checks membership + course content and bumps run_count; runs never affect
+ * points.
  */
-export async function recordRun(
+export async function recordTestRun(
   courseId: string,
   titleSlug: string,
-  passed: boolean,
-  execMs: number | null,
-): Promise<ProblemProgress> {
+): Promise<void> {
   const client = requireClient();
-  const { data, error } = await client.rpc("record_run", {
+  const { error } = await client.rpc("record_test_run", {
     p_course_id: courseId,
     p_slug: titleSlug,
-    p_passed: passed,
-    p_exec_ms: execMs,
   });
-  if (error) throw new Error(`Record run failed: ${error.message}`);
-  return rowToProgress(data as ProgressRow);
+  if (error) throw new Error(`Record test run failed: ${error.message}`);
+}
+
+/**
+ * Save a submission (code + test result) and, in a course context, score it.
+ * The RPC (security definer) stores the submissions row, bumps submit_count /
+ * failed_submits, and freezes points at the first successful submission —
+ * earlier success in the course window scores more; the formula lives
+ * server-side only. Returns the progress row, or null for a practice submit
+ * (no valid course context: saved, not scored).
+ */
+export async function recordSubmission(input: {
+  courseId: string | null;
+  titleSlug: string;
+  lang: string;
+  code: string;
+  summary: TestSummary | null;
+  passed: boolean;
+}): Promise<ProblemProgress | null> {
+  const client = requireClient();
+  const { data, error } = await client.rpc("record_submission", {
+    p_slug: input.titleSlug,
+    p_lang: input.lang,
+    p_code: input.code,
+    p_total: input.summary?.total ?? 0,
+    p_passed_tests: input.summary?.passed ?? 0,
+    p_failed_tests: input.summary?.failed ?? 0,
+    p_passed: input.passed,
+    p_course_id: input.courseId,
+  });
+  if (error) throw new Error(`Record submission failed: ${error.message}`);
+  // The RPC returns a null composite for practice submits.
+  const row = data as ProgressRow | null;
+  return row && row.course_id != null ? rowToProgress(row) : null;
 }
 
 /** Ranked standings for one course (member-only via RLS on the view). */
