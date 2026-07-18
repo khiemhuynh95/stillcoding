@@ -54,6 +54,7 @@ interface CourseWeekRow {
   course_id: string;
   title: string;
   position: number;
+  material: string;
   course_problems: CourseProblemRow[];
 }
 
@@ -98,6 +99,7 @@ function rowToWeek(r: CourseWeekRow): CourseWeek {
     courseId: r.course_id,
     title: r.title,
     position: r.position,
+    material: r.material ?? "",
     problems: (r.course_problems ?? [])
       .slice()
       .sort((a, b) => a.position - b.position)
@@ -271,7 +273,7 @@ export async function fetchWeeks(courseId: string): Promise<CourseWeek[]> {
   const client = requireClient();
   const { data, error } = await client
     .from("course_weeks")
-    .select("id, course_id, title, position, course_problems (id, week_id, title_slug, position)")
+    .select("id, course_id, title, position, material, course_problems (id, week_id, title_slug, position)")
     .eq("course_id", courseId)
     .order("position");
   if (error) throw new Error(`Weeks read failed: ${error.message}`);
@@ -297,6 +299,18 @@ export async function renameWeek(weekId: string, title: string): Promise<void> {
     .update({ title })
     .eq("id", weekId);
   if (error) throw new Error(`Rename week failed: ${error.message}`);
+}
+
+export async function updateWeekMaterial(
+  weekId: string,
+  material: string,
+): Promise<void> {
+  const client = requireClient();
+  const { error } = await client
+    .from("course_weeks")
+    .update({ material })
+    .eq("id", weekId);
+  if (error) throw new Error(`Update material failed: ${error.message}`);
 }
 
 export async function deleteWeek(weekId: string): Promise<void> {

@@ -129,6 +129,8 @@ export interface CourseWeek {
   courseId: string;
   title: string;
   position: number;
+  /** Markdown study material ('' = none; link hidden in the member view). */
+  material: string;
   /** Ordered problems, parallel to ProblemList.slugs. */
   problems: CourseProblemRef[];
 }

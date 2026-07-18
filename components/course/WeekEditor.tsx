@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DifficultyBadge } from "@/components/browse/DifficultyBadge";
 import { ProblemPicker } from "@/components/course/ProblemPicker";
 import { useProblems } from "@/hooks/useProblems";
@@ -16,10 +16,15 @@ export function WeekEditor({
   courseId: string;
 }) {
   const { data: problems } = useProblems(null);
-  const { rename, remove, addProblem, removeProblem, reorder } =
+  const { rename, remove, setMaterial, addProblem, removeProblem, reorder } =
     useWeekMutations(courseId);
 
   const [title, setTitle] = useState(week.title);
+  const [materialOpen, setMaterialOpen] = useState(false);
+  const [material, setMaterialDraft] = useState(week.material);
+
+  // Resync the draft when the saved value refreshes (post-save invalidation).
+  useEffect(() => setMaterialDraft(week.material), [week.material]);
 
   const problemsBySlug = useMemo(() => {
     const map = new Map(problems?.map((p) => [p.title_slug, p]) ?? []);
@@ -154,6 +159,62 @@ export function WeekEditor({
           })
         }
       />
+
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setMaterialOpen((open) => !open)}
+          className="flex items-center gap-1.5 self-start text-label-md font-label-md text-on-surface-variant hover:text-on-surface transition-colors"
+          aria-expanded={materialOpen}
+        >
+          <span className="material-symbols-outlined text-[16px]" aria-hidden>
+            menu_book
+          </span>
+          Study material
+          <span className="text-on-surface-variant/60">
+            {week.material.trim() ? "· added" : "· empty"}
+          </span>
+          <span
+            className="material-symbols-outlined text-[16px]"
+            aria-hidden
+          >
+            {materialOpen ? "expand_less" : "expand_more"}
+          </span>
+        </button>
+        {materialOpen && (
+          <>
+            <textarea
+              value={material}
+              onChange={(e) => setMaterialDraft(e.target.value)}
+              rows={8}
+              placeholder="Markdown supported — headings, lists, links, code blocks…"
+              className="w-full bg-surface-container border border-outline-variant rounded px-3 py-2 text-body-sm font-mono text-on-surface placeholder:text-on-surface-variant/60 outline-none focus:ring-2 focus:ring-primary resize-y"
+              aria-label={`Study material for ${week.title}`}
+            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setMaterial.mutate({
+                    weekId: week.id,
+                    material: material.trim(),
+                  })
+                }
+                disabled={
+                  setMaterial.isPending || material.trim() === week.material
+                }
+                className="self-start px-4 py-1.5 rounded-full bg-primary text-on-primary text-label-md font-label-md disabled:opacity-40 transition-opacity"
+              >
+                {setMaterial.isPending ? "Saving…" : "Save material"}
+              </button>
+              <span className="text-body-sm text-on-surface-variant">
+                Shown to members as a &ldquo;Study material&rdquo; link on the
+                week. Clear and save to remove.
+              </span>
+            </div>
+          </>
+        )}
+      </div>
     </section>
   );
 }

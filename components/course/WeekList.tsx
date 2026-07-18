@@ -41,9 +41,25 @@ export function WeekList({
           .filter((r) => r.problem != null);
         return (
           <section key={week.id}>
-            <h3 className="text-label-md font-label-md uppercase tracking-wider text-on-surface-variant mb-2">
-              {week.title}
-            </h3>
+            <div className="flex items-baseline justify-between gap-2 mb-2">
+              <h3 className="text-label-md font-label-md uppercase tracking-wider text-on-surface-variant">
+                {week.title}
+              </h3>
+              {week.material.trim().length > 0 && (
+                <Link
+                  href={`/course/${courseId}/week/${week.id}`}
+                  className="flex items-center gap-1 text-label-md font-label-md text-primary hover:underline"
+                >
+                  <span
+                    className="material-symbols-outlined text-[16px]"
+                    aria-hidden
+                  >
+                    menu_book
+                  </span>
+                  Study material
+                </Link>
+              )}
+            </div>
             {rows.length === 0 ? (
               <p className="text-body-sm text-on-surface-variant px-1 py-2">
                 No problems in this week yet.

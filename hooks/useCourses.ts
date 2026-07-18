@@ -24,6 +24,7 @@ import {
   revokeInvite,
   setMemberRole,
   updateCourse,
+  updateWeekMaterial,
 } from "@/lib/course";
 import type { CourseRole } from "@/lib/types";
 
@@ -176,6 +177,11 @@ export function useWeekMutations(courseId: string) {
     mutationFn: (weekId: string) => deleteWeek(weekId),
     onSuccess: invalidate,
   });
+  const setMaterial = useMutation({
+    mutationFn: (input: { weekId: string; material: string }) =>
+      updateWeekMaterial(input.weekId, input.material),
+    onSuccess: invalidate,
+  });
   const addProblem = useMutation({
     mutationFn: (input: { weekId: string; titleSlug: string; position: number }) =>
       addProblemToWeek(input.weekId, input.titleSlug, input.position),
@@ -190,7 +196,7 @@ export function useWeekMutations(courseId: string) {
       reorderWeekProblems(orderedProblemIds),
     onSuccess: invalidate,
   });
-  return { create, rename, remove, addProblem, removeProblem, reorder };
+  return { create, rename, remove, setMaterial, addProblem, removeProblem, reorder };
 }
 
 export function useMemberMutations(courseId: string) {

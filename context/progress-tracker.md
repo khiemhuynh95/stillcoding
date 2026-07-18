@@ -435,6 +435,36 @@ Update this file after every meaningful implementation change.
     consider disabling "Confirm email" (no SMTP configured). Course problem
     lists to be provided later and entered via the manage UI.
 
+- **Weekly study material (courses)** — each course week can carry
+  optional **markdown study material**, admin-authored, member-read.
+  - **DB (`20260715000001_course_week_material.sql`)**: `material text
+    not null default ''` on `course_weeks` ('' = none). No new RLS —
+    the existing member-read / admin-manage week policies cover it.
+  - **Data layer**: `CourseWeek.material` (types), `fetchWeeks` selects
+    it, `updateWeekMaterial(weekId, material)` in `lib/course.ts`,
+    `setMaterial` mutation in `useWeekMutations` (coarse `["course"]`
+    invalidation as usual).
+  - **Markdown pipeline**: new direct dep `marked` (v14, was already in
+    the lockfile transitively); `lib/markdown.ts` `markdownToSafeHtml`
+    = `marked.parse({async:false, gfm:true})` → `sanitizeHtml`
+    (DOMPurify) — marked stopped sanitizing at v8, so the sanitize step
+    is the invariant, matching the problem-HTML rule. XSS probes
+    (`<script>`, `onerror=`, `javascript:` links) verified stripped.
+  - **Admin UX**: collapsible "Study material" section per week card in
+    `WeekEditor.tsx` (toggle shows added/empty, textarea + Save; clear
+    and save removes; draft resyncs from the server value after
+    invalidation).
+  - **Member UX**: `WeekList.tsx` shows a "Study material" link on
+    weeks with non-empty material (hidden otherwise) →
+    `app/course/(member)/[id]/week/[weekId]/page.tsx` (client page
+    cloned from the leaderboard page: join-code param → uuid via
+    `useCourse`, week found in the cached `useCourseWeeks` set;
+    lock/empty states) rendering via `.problem-content`, which gained
+    h1–h4/blockquote/hr styles in `globals.css` (markdown emits them,
+    LeetCode HTML rarely did). `npm run build` passes.
+  - **Manual step:** `supabase db push` (or run the migration SQL in
+    the dashboard editor) — the CLI isn't linked in this environment.
+
 ## Next Up
 
 - Feed the real course problem lists into a course via the manage UI

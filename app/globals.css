@@ -145,6 +145,29 @@
   .problem-content a {
     @apply text-primary underline;
   }
+  /* Headings/blockquotes appear in course study material (markdown), not in
+     the API's problem HTML — same prose system, extra elements. */
+  .problem-content h1 {
+    @apply font-headline-sm text-headline-sm text-on-surface mt-6 mb-3;
+  }
+  .problem-content h2 {
+    @apply font-headline-sm text-[17px] font-semibold text-on-surface mt-6 mb-2;
+  }
+  .problem-content h3,
+  .problem-content h4 {
+    @apply font-headline-sm text-[15px] font-semibold text-on-surface mt-4 mb-2;
+  }
+  .problem-content h1:first-child,
+  .problem-content h2:first-child,
+  .problem-content h3:first-child {
+    @apply mt-0;
+  }
+  .problem-content blockquote {
+    @apply border-l-2 border-outline-variant pl-4 my-4 text-on-surface-variant;
+  }
+  .problem-content hr {
+    @apply border-outline-variant my-6;
+  }
 }
 
 @layer components {

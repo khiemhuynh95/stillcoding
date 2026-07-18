@@ -68,7 +68,9 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
   library.)
 - **Supabase course tables (hidden beta, signed-in only)**: `profiles`,
   `courses` (join code + start/end timeline), `course_members`,
-  `course_invites`, `course_weeks`, `course_problems` (ordered slugs per
+  `course_invites`, `course_weeks` (title, position, and optional
+  markdown `material` — admin-authored study notes rendered on
+  `/course/[code]/week/[weekId]`), `course_problems` (ordered slugs per
   week), `problem_progress` (per user+course+problem: failed-attempt
   counter, then frozen `points`/`exec_ms`/`completed_at`), and the
   `course_leaderboard` view (security_invoker). Course content is
@@ -152,6 +154,9 @@ React 18.3 (not 19) was chosen for clean Monaco / panels peer deps.
    persists to Supabase through `lib/course.ts` only.
 4. Problem HTML is **always** sanitized (`lib/sanitize.ts`) before
    render — never `dangerouslySetInnerHTML` raw API/DB content.
+   Markdown (course study material) renders only through
+   `lib/markdown.ts` (`marked` → `sanitizeHtml`) — same invariant,
+   markdown flavored.
 5. Code execution is **Run-only, no judge** and limited to three
    languages: Python (Pyodide/WASM in a Web Worker) and JavaScript
    (native, in a Web Worker — `hooks/useRunJavaScript.ts`) run

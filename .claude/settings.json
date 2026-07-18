@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(supabase db *)",
+      "Bash(npx supabase *)",
+      "Bash(npm install *)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(ls ~/.supabase/ 2>/dev/null; ls /Users/test/Desktop/react/stillcoding/supabase/.temp 2>/dev/null; grep -l \"SUPABASE\" /Users/test/Desktop/react/stillcoding/.env.local 2>/dev/null && grep -o '^[A-Z_]*' /Users/test/Desktop/react/stillcoding/.env.local)",
+      "Read(//Users/test/.supabase/**)"
+    ]
+  }
+}
